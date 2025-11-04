@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PELLETB Practice Exam — 5 Sections • 3 Hours</title>
+  <title>PELLETB Practice Exam — 5 Sections • 3 Hours (v4)</title>
   <style>
     :root{--bg:#0b1020;--card:#121936;--ink:#f6f8ff;--muted:#a9b3d0;--accent:#7aa2ff;--good:#1ad598;--bad:#ff5a7a}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1e,#0f1630);} 
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1e,#0f1630);}
     .wrap{max-width:1100px;margin:0 auto;padding:24px;color:var(--ink)}
     h1{font-weight:800;letter-spacing:.3px;margin:4px 0 12px}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 18px;box-shadow:0 12px 20px rgba(0,0,0,.25)}
@@ -47,7 +47,7 @@
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div>
-          <h1>PELLETB Practice Exam — 5 Sections • 3 Hours</h1>
+          <h1>PELLETB Practice Exam — 5 Sections • 3 Hours (v4)</h1>
           <div class="row">
             <span class="badge"><strong>Total Time:</strong> <span class="timer" id="totalTimer">03:00:00</span></span>
             <span class="badge"><strong>Section Time:</strong> <span class="timer" id="sectionTimer">36:00</span></span>
@@ -87,149 +87,176 @@
 
 <script>
 // ========= STORAGE & UTILS =========
-const STORAGE_KEY = 'pelletb.practice.v3.5sections';
+const STORAGE_KEY = 'pelletb.practice.v4.five.sections'; // new key to ignore old timers
 function $(id){return document.getElementById(id)}
-function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}` }
+function fmt(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  const hh=String(Math.floor(s/3600)).padStart(2,'0');
+  const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const ss=String(s%60).padStart(2,'0');
+  return hh+':'+mm+':'+ss;
+}
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr }
+function choice(arr){ return arr[Math.floor(Math.random()*arr.length)] }
 
-// ========= QUESTION BANK (5 sections, fixed 36 min each) =========
-// SECTION 1: Writing (Clarity & Grammar)
-const WRITING = {
-  id:'writing', label:'Writing (Clarity & Grammar)', minutes:36,
-  questions:[
-    {type:'mc', prompt:'Choose the sentence that is most clear and grammatically correct.', choices:['The suspect, who we seen earlier, was detained.','The suspect whom we saw earlier was detained.','The suspect which we saw earlier was detained.','The suspect who we seen earlier, was detained.'], answer:1, explain:'"whom" is correct as object of "saw"; no comma needed.'},
-    {type:'mc', prompt:'Select the sentence with correct comma usage.', choices:['Officers secured the scene and, waited for detectives.','Officers secured the scene and waited for detectives.','Officers, secured the scene and waited for detectives.','Officers secured, the scene and waited for detectives.'], answer:1, explain:'Compound predicate → no comma.'},
-    {type:'mc', prompt:'Choose the sentence free of ambiguity.', choices:['The victim reported seeing a man with a hat and backpack running.','The victim reported that a man wearing a hat and backpack was running.','The victim reported seeing a man running with a hat and backpack (unclear).','Running, the victim reported a man with a hat and backpack.'], answer:1, explain:'Specifies the man wore the items.'},
-    {type:'mc', prompt:'Pick the best transition.', choices:['The door was forced open. However the frame was undamaged.','The door was forced open; however, the frame was undamaged.','The door was forced open, however, the frame was undamaged.','The door was forced open however the frame was undamaged.'], answer:1, explain:'Semicolon before conjunctive adverb + comma after.'},
-    {type:'mc', prompt:'Subject–verb agreement.', choices:['Neither the witnesses nor the suspect are credible.','Neither the witnesses nor the suspect is credible.','Neither the witness nor the suspects is credible.','Neither the witnesses nor the suspects is credible.'], answer:1, explain:'Verb agrees with nearer subject.'},
-    {type:'mc', prompt:'Most concise.', choices:['Due to the fact that it was raining, we delayed the search.','Because it was raining, we delayed the search.','On account of the rain, a delay of the search was effectuated.','As a result of rain, there was a delay of the search.'], answer:1, explain:'"Because" is concise.'},
-    {type:'mc', prompt:'Parallel structure.', choices:['The suspect fled, jumping fences and to run through yards.','The suspect fled, jumping fences and running through yards.','The suspect fled, jumped fences, and runs through yards.','The suspect flees, jumped fences, and running through yards.'], answer:1, explain:'Gerunds match.'},
-    {type:'mc', prompt:'Which is punctuated correctly?', choices:['Each officer was issued a Taser, body camera, and radio.','Each officer was issued; a Taser, body camera, and radio.','Each officer, was issued a Taser body camera, and radio.','Each officer was issued a Taser; body camera and radio.'], answer:0, explain:'Simple list with commas.'},
-    {type:'mc', prompt:'Pronoun case.', choices:['It was them who arrived first.','It was they who arrived first.','It was him who arrived first.','It was her that arrived first.'], answer:1, explain:'Subjective case after a linking verb (formal standard).'},
-    {type:'mc', prompt:'Best revision for clarity.', choices:['Having finished the interview, the report was written by Officer Diaz.','After Officer Diaz finished the interview, she wrote the report.','The report was written after finishing the interview by Officer Diaz.','After finishing, the report was written.'], answer:1, explain:'Avoid dangling modifiers.'},
-    {type:'mc', prompt:'Choose correct capitalization.', choices:['The officer read the miranda rights.','The officer read the Miranda rights.','The Officer read the Miranda rights.','The officer read the miranda Rights.'], answer:1, explain:'Proper noun (surname).'},
-    {type:'mc', prompt:'Best formal tone for a report.', choices:['The perp totally freaked out.','The subject became visibly agitated.','The guy got mad.','The suspect was like, angry.'], answer:1, explain:'Objective, professional wording.'},
-    {type:'mc', prompt:'Comma with nonrestrictive clause.', choices:['Mr. Lopez who teaches math called 911.','Mr. Lopez, who teaches math, called 911.','Mr. Lopez, who teaches math called 911.','Mr. Lopez who teaches math, called 911.'], answer:1, explain:'Nonrestrictive clause set off by commas.'},
-    {type:'mc', prompt:'Hyphenation.', choices:['blue colored backpack','blue-colored backpack','blue colored-backpack','blue colored back-pack'], answer:1, explain:'Compound adjective before noun.'},
-    {type:'mc', prompt:'Active vs passive (best choice).', choices:['The arrest was made by Officer Tran.','Officer Tran made the arrest.','The arrest got made by Officer Tran.','There was an arrest made by Officer Tran.'], answer:1, explain:'Active voice preferred in reports.'},
-    {type:'mc', prompt:'Comma splice fix.', choices:['We arrived, we cleared the room.','We arrived; we cleared the room.','We arrived however we cleared the room.','We arrived, and cleared the room.'], answer:1, explain:'Semicolon or conjunction with comma.'},
-    {type:'mc', prompt:'Modifier placement.', choices:['I nearly interviewed the witness for thirty minutes.','I interviewed the witness for nearly thirty minutes.','I interviewed nearly the witness for thirty minutes.','Nearly the witness I interviewed for thirty minutes.'], answer:1, explain:'"Nearly" modifies time, not the act.'},
-    {type:'mc', prompt:'Best parallel list of actions.', choices:['I canvassed, interviewed, and the report was written.','I canvassed the area, interviewed witnesses, and wrote the report.','I canvassed the area and interviewed witnesses, and report writing.','I canvassed and interviewed, and writing the report.'], answer:1, explain:'All verbs parallel.'},
-    {type:'mc', prompt:'Correct apostrophe usage.', choices:['The victims phone was unlocked.','The victim’s phone was unlocked.','The victims’ phone was unlocked (singular victim).','The victim phone’s was unlocked.'], answer:1, explain:'Singular possessive.'},
-    {type:'mc', prompt:'Word choice for precision.', choices:['The suspect exited the vehicle and ran.','The suspect got out of the thing and took off.','The suspect left the car and went away fast-like.','The suspect ditched and bounced.'], answer:0, explain:'Precise, neutral wording.'}
-  ]
-};
+// ========= QUESTION GENERATORS =========
+// WRITING (50): grammar/clarity/punctuation
+function buildWriting(){
+  const items=[];
+  const sv = [
+    ['Neither the witnesses nor the suspect are credible.','Neither the witnesses nor the suspect is credible.','Neither the witness nor the suspects is credible.','Neither the witnesses nor the suspects is credible.',1],
+    ['Each of the students have a pass.','Each of the students has a pass.','Each of the student have a pass.','Each of the student has a pass.',1],
+    ['Either the officers or the sergeant are responding.','Either the officers or the sergeant is responding.','Either the officers or the sergeant were responding.','Either the officers nor the sergeant is responding.',1],
+    ['A number of calls is pending.','A number of calls are pending.','The number of calls are pending.','The number of calls were pending.',1]
+  ];
+  const comma = [
+    ['We arrived and, cleared the hallway.','We arrived and cleared the hallway.','We arrived, and cleared the hallway.','We, arrived and cleared the hallway.',1],
+    ['Mr. Lopez who teaches math called 911.','Mr. Lopez, who teaches math called 911.','Mr. Lopez, who teaches math, called 911.','Mr. Lopez who teaches math, called 911.',2],
+    ['The door was forced open however the frame was fine.','The door was forced open; however, the frame was fine.','The door was forced open, however, the frame was fine.','The door was forced open however, the frame was fine.',1],
+    ['We canvassed the area, interviewed witnesses, and wrote the report.','We canvassed the area, interviewed witnesses and, wrote the report.','We canvassed, the area, interviewed witnesses, and wrote the report.','We canvassed the area interviewed witnesses, and wrote the report.',0]
+  ];
+  const clarity = [
+    ['Having finished the interview, the report was written by Officer Diaz.','After Officer Diaz finished the interview, she wrote the report.','The report was written after finishing the interview by Officer Diaz.','After finishing, the report was written.',1],
+    ['The victim reported seeing a man with a hat and a backpack running.','The victim reported that a man wearing a hat and backpack was running.','The victim reported seeing a man running with a hat and backpack (unclear).','Running, the victim reported a man with a hat and backpack.',1],
+    ['There was a very loud and extremely noisy disturbance.','Witnesses reported a loud disturbance.','It was like super loud and stuff.','The disturbance was allegedly loudish.',1]
+  ];
+  const tone = [
+    ['The perp totally freaked out.','The subject became visibly agitated.','The dude got mad.','The suspect was like, angry.',1],
+    ['The officer read the miranda rights.','The officer read the Miranda rights.','The Officer read the Miranda rights.','The officer read the miranda Rights.',1]
+  ];
+  const hyphen = [
+    ['blue colored backpack','blue-colored backpack','blue colored-backpack','blue colored back-pack',1],
+    ['a well known student','a well-known student','a well known-student','a well- known student',1]
+  ];
+  const splice = [
+    ['We arrived, we cleared the room.','We arrived; we cleared the room.','We arrived however we cleared the room.','We arrived, and cleared the room.',1]
+  ];
+  const bank = [sv,comma,clarity,tone,hyphen,splice];
+  while(items.length<50){
+    const group = choice(bank);
+    const q = choice(group);
+    const opts = q.slice(0,4); const answer=q[4];
+    items.push({type:'mc', prompt:'Choose the best sentence.', choices:opts, answer, explain:'Focus on grammar, punctuation, and clarity.'});
+  }
+  return items;
+}
 
-// SECTION 2: Spelling (Common LE/Legal Report Words) — typed answers
-const SPELLING = {
-  id:'spelling', label:'Spelling (Common LE/Legal Words)', minutes:36,
-  questions:[
-    {type:'spelling', prompt:'Type the correct spelling: The judge issued a ____ to appear in court.', answer:'subpoena', explain:'sub-poe-na (subpoena).'},
-    {type:'spelling', prompt:'Type the correct spelling: Items of drug ________ were seized.', answer:'paraphernalia', explain:'para-pher-na-lia.'},
-    {type:'spelling', prompt:'Type the correct spelling: The officer conducted stationary ________ near the gate.', answer:'surveillance', explain:'double “l” + “eillance”.'},
-    {type:'spelling', prompt:'Type the correct spelling: The suspect was found in ________ of stolen property.', answer:'possession', explain:'pos-session.'},
-    {type:'spelling', prompt:'Type the correct spelling: The incident ________ at 1930 hours.', answer:'occurred', explain:'double r.'},
-    {type:'spelling', prompt:'Type the correct spelling: The team executed a search ________.', answer:'warrant', explain:'two r’s.'},
-    {type:'spelling', prompt:'Type the correct spelling: The officer chose not to ________ the vehicle.', answer:'pursue', explain:'not “persue”.'},
-    {type:'spelling', prompt:'Type the correct spelling: Cash was subject to civil ________.', answer:'forfeiture', explain:'for-fei-ture.'},
-    {type:'spelling', prompt:'Type the correct spelling: The defendant received an ________.', answer:'acquittal', explain:'ac-quit-tal.'},
-    {type:'spelling', prompt:'Type the correct spelling: The school requested a parent ________.', answer:'liaison', explain:'liai-son.'},
-    {type:'spelling', prompt:'Type the correct spelling: The property was ________ and logged.', answer:'seized', explain:'seize → seized.'},
-    {type:'spelling', prompt:'Type the correct spelling: The offense is a ________ (less than a felony).', answer:'misdemeanor', explain:'mis-de-mean-or.'},
-    {type:'spelling', prompt:'Type the correct spelling: The report was kept ________ from opinion.', answer:'separate', explain:'sep-a-rate.'},
-    {type:'spelling', prompt:'Type the correct spelling: Driver’s ________ suspended.', answer:'license', explain:'U.S. spelling.'},
-    {type:'spelling', prompt:'Type the correct spelling: ________ rights were read.', answer:'Miranda', explain:'capitalized surname.'},
-    {type:'spelling', prompt:'Type the correct spelling: The crowd showed ________.', answer:'resistance', explain:'not “resistence”.'},
-    {type:'spelling', prompt:'Type the correct spelling: Policy ________ was documented.', answer:'violation', explain:'vio-la-tion.'},
-    {type:'spelling', prompt:'Type the correct spelling: The youth is a ________ under state law.', answer:'juvenile', explain:'ju-ve-nile.'},
-    {type:'spelling', prompt:'Type the correct spelling: The court entered a default ________.', answer:'judgment', explain:'U.S. legal spelling (no “e”).'},
-    {type:'spelling', prompt:'Type the correct spelling: The item was kept in the evidence ________.', answer:'warehouse', explain:'compound word.'}
-  ]
-};
+// SPELLING MC (50): heavy LE/legal/report terms
+function buildSpelling(){
+  const words = [
+    'subpoena','paraphernalia','surveillance','possession','occurred','warrant','pursue','forfeiture','acquittal','liaison','seized','misdemeanor','separate','license','Miranda','resistance','violation','juvenile','judgment','warehouse','perpetrator','trespassing','contraband','burglary','robbery','trespasser','tactical','narcotics','homicide','embezzlement','trespass','trespassed','trespasses','investigate','investigation','suspect','witness','victim','probation','parole','arraignment','custody','evidence','perimeter','dispatch','survivor','accomplice','contradictory','coercion','negligence'
+  ];
+  function misspell(word){
+    const variants=new Set();
+    // generate variants without using '$1'
+    variants.add(word.replace(/ie/g,'ei'));
+    variants.add(word.replace(/ei/g,'ie'));
+    variants.add(word.replace(/([a-z])\\1/, function(_,p){ return p; })); // drop a double letter
+    variants.add(word.replace(/e$/,'')); // drop trailing e
+    variants.add(word.replace(/a/g,'e'));
+    variants.add(word.replace(/c/g,'s'));
+    variants.add(word.replace(/ph/g,'f'));
+    return Array.from(variants).filter(v=>v.toLowerCase()!==word.toLowerCase() && v.length>2).slice(0,6);
+  }
+  const items=[];
+  words.slice(0,50).forEach(function(w){
+    let ds = misspell(w);
+    while(ds.length<3){ ds.push(w + 'e'); }
+    const opts = shuffle([w, ds[0], ds[1], ds[2]]);
+    items.push({type:'mc', prompt:'Choose the correct spelling.', choices:opts, answer:opts.indexOf(w), explain:'Correct: '+w});
+  });
+  return items;
+}
 
-// SECTION 3: Reading Comprehension (MC)
-const READING = {
-  id:'reading', label:'Reading Comprehension', minutes:36,
-  questions:[
-    {type:'mc', prompt:'Passage: Officers responded at 2215 hrs to 840 Pine St. A window was broken; a wallet labeled “J. Ramos” lay on the sidewalk. A blue sedan left eastbound at high speed two minutes prior. Which detail most suggests forced entry?', choices:['Time of call','Broken window','Wallet on sidewalk','Sedan leaving'], answer:1, explain:'Broken window indicates a breach.'},
-    {type:'mc', prompt:'Policy requires logging each control hold within 24 hrs; supervisors review weekly. Primary purpose of review?', choices:['Discipline users','App maintenance','Oversight & training needs','Eliminate control holds'], answer:2, explain:'Oversight + training gaps.'},
-    {type:'mc', prompt:'Burglary: shoe prints lead to alley where a bicycle lock is found. Most reasonable inference?', choices:['Suspect definitely escaped on bicycle','Suspect may have used a bicycle','Prints from a neighbor','Lock belongs to victim'], answer:1, explain:'Suggests, not proves, bicycle link.'},
-    {type:'mc', prompt:'After an anti-bullying talk, more students report bullying. Best explanation?', choices:['Bullying increased','Willingness to report increased','Talk caused false reports','Officer unclear'], answer:1, explain:'Awareness increases reporting.'},
-    {type:'mc', prompt:'Park closes 2200. Runner contacted 2215, cooperative. Policy is education before citation. Best immediate action?', choices:['Cite immediately','Detain for trespass','Warn and explain hours','Arrest for resisting'], answer:2},
-    {type:'mc', prompt:'Noise complaints for two months; tonight resident lowers volume. Best documentation for long-term problem solving?', choices:['No report','Brief log entry referencing prior calls','Full crime report','Email city attorney'], answer:1},
-    {type:'mc', prompt:'Bike thefts near one rack after sunset; dim light, partial cameras. Best response?', choices:['More loitering citations','Improve lighting + cameras','Close rack','Random searches'], answer:1},
-    {type:'mc', prompt:'Witness: “Driver ~6 ft, red hoodie, white hatchback.” Most reliable BOLO detail?', choices:['~6 ft','Red hoodie','White hatchback','Tall and nervous'], answer:2},
-    {type:'mc', prompt:'Policy requires secondary searches pre-transport; several cases lack notation. Primary concern?', choices:['Officer safety risk','Report length','Old transport log','Property overload'], answer:0},
-    {type:'mc', prompt:'Teacher reports student said “get even” after grade dispute; no history. Best initial step?', choices:['Immediate arrest','Document + threat assessment with admin','Ignore unless weapon seen','Notify media'], answer:1},
-    {type:'mc', prompt:'Campus sees vapes in bathrooms; peak at lunch; cameras only at entrances. Best prevention?', choices:['Ticket every student in hallway','Stagger restroom monitoring at peak times + signage','Close all restrooms','Search random backpacks'], answer:1},
-    {type:'mc', prompt:'A BOLO says “dark SUV with dealer paper plates.” Which follow-up question increases specificity most?', choices:['Was it loud?','Any damage or distinctive stickers?','Which direction last seen?','Was the driver angry?'], answer:1},
-    {type:'mc', prompt:'Victim emails hours after theft with new serial number info. Best action?', choices:['Ignore; late','Update report with supplemental','Start a new report','Delete original'], answer:1},
-    {type:'mc', prompt:'A witness contradicts initial statement after body-cam review. Best documentation?', choices:['Do nothing','Note change; add explanation in supplemental','Rewrite original report','Discard earlier statement'], answer:1},
-    {type:'mc', prompt:'A storm knocks out power; alarms trigger citywide. Dispatch triage should prioritize…', choices:['All alarms equally','Life-safety and in-progress events','Property-only alarms first','Oldest calls first'], answer:1},
-    {type:'mc', prompt:'Parent reports cyberbullying off-campus affecting a student’s attendance. Best collaboration?', choices:['Refer to other agency only','School admin + counselor + SRO plan','Arrest the bully at once','Ignore: off-campus'], answer:1},
-    {type:'mc', prompt:'A witness says, “I think it was a Honda or maybe a Toyota.” Best narrative wording?', choices:['Witness positively ID’d a Honda.','Witness identified a Toyota.','Witness described a small, light-colored sedan (make uncertain).','No usable info.'], answer:2},
-    {type:'mc', prompt:'A campus safety plan requires drills each quarter; last log shows none in Q2. Best supervisor note?', choices:['Punish staff','Schedule make-up drill and document','Ignore: low risk','Inform media'], answer:1},
-    {type:'mc', prompt:'Which detail is most objective?', choices:['The suspect looked sketchy.','The suspect walked quickly, glanced back twice, and hid an item in a pocket.','The suspect was probably high.','The suspect seemed unfriendly.'], answer:1},
-    {type:'mc', prompt:'What’s the best concluding sentence for a neutral report?', choices:['I think he’s guilty.','I feel justice will be served.','See body-worn camera file #1247 and attached photos for evidence locations.','Hopefully, this ends the problem.'], answer:2}
-  ]
-};
+// READING (50): templated passages
+function buildReading(){
+  const streets=['Pine St','Maple Ave','Cedar Blvd','Oak St','Elm Rd','Grant St'];
+  const colors=['blue','white','black','silver','red'];
+  const vehicle=['sedan','SUV','hatchback','pickup'];
+  const items=[];
+  for(let i=0;i<20;i++){
+    const st=choice(streets), col=choice(colors), veh=choice(vehicle);
+    const p='Officers responded at 2215 hrs to 8'+i+i+' '+st+'. A window was broken; a wallet lay on the sidewalk. Neighbors saw a '+col+' '+veh+' leave eastbound moments earlier.';
+    items.push({type:'mc', prompt:'Passage: '+p+' What detail most suggests forced entry?', choices:['Time of call','Broken window','Wallet on sidewalk','The '+col+' '+veh], answer:1, explain:'A broken window indicates a breach.'});
+  }
+  const policyQs=[
+    ['New policy requires logging control holds within 24 hours; supervisors review weekly. Primary purpose of weekly review?', ['Discipline','App maintenance','Oversight & training needs','Eliminate control holds'],2],
+    ['Secondary searches required before transport; several cases lack notation. Primary concern?', ['Officer safety risk','Report too long','Old transport log','Property overload'],0],
+    ['Park closes 2200; cooperative runner at 2215; education-first policy. Best immediate action?', ['Cite immediately','Detain for trespass','Warn and explain posted hours','Arrest for resisting'],2]
+  ];
+  while(items.length<50){
+    const picked = choice(policyQs);
+    items.push({type:'mc', prompt:'Passage: '+picked[0], choices:picked[1], answer:picked[2]});
+  }
+  return items;
+}
 
-// SECTION 4: Reasoning Ability (MC)
-const REASONING = {
-  id:'reasoning', label:'Reasoning Ability', minutes:36,
-  questions:[
-    {type:'mc', prompt:'All trespassers in the park after 2200 are cited. Carlos is in the park at 2300. Must be true?', choices:['He will be arrested.','He will receive a citation.','He is a minor.','He committed burglary.'], answer:1},
-    {type:'mc', prompt:'Lockers A, B, C must be checked in order. If B is unavailable, C cannot be checked. Today, A was checked; C was not. Inference?', choices:['B was available and checked.','B was unavailable.','A was unavailable.','C was checked before A.'], answer:1},
-    {type:'mc', prompt:'No vehicles in Lane 2; all delivery trucks are vehicles. True?', choices:['Some delivery trucks may use Lane 2.','No delivery trucks may use Lane 2.','Only emergency vehicles may use Lane 2.','Lane 2 is closed.'], answer:1},
-    {type:'mc', prompt:'Keys are in locker, desk, or patrol car. Not in locker. If in patrol car, Officer Lee would have found them (she did not). Where are they?', choices:['Locker','Desk','Patrol car','Unknown'], answer:1},
-    {type:'mc', prompt:'Exactly one is true: (1) suspect wore a hat; (2) suspect wore glasses; (3) suspect wore neither. Which is true?', choices:['(1)','(2)','(3)','None'], answer:0},
-    {type:'mc', prompt:'Logbook requires entries every 30 min from 0800. Entries: 0830, 0900, none at 0930. First violation time?', choices:['0830','0900','0930','1000'], answer:2},
-    {type:'mc', prompt:'A, B, C interviews: A before B; C last. Valid order?', choices:['A, C, B','B, A, C','A, B, C','C, A, B'], answer:2},
-    {type:'mc', prompt:'Every third car inspected. 9th is inspected. Which also inspected?', choices:['12th','13th','14th','15th'], answer:0},
-    {type:'mc', prompt:'Badges divisible by 3 have blue stripe. Badge #27 lacks stripe. Must be true?', choices:['Badge fake','Not divisible by 3','Stripe worn off','Misprinted'], answer:1},
-    {type:'mc', prompt:'If some students with tardies attend tutoring, and all tutoring attendees get parent contact, which must be true?', choices:['All tardy students get contacted.','Some tardy students get contacted.','No tardy students get contacted.','Tutoring is optional.'], answer:1},
-    {type:'mc', prompt:'Only staff with keys may access Lab A. Officer Kim has key access. Which is valid?', choices:['Kim may access Lab A.','All keyholders are officers.','No one without a key can access any lab.','Lab A is always locked.'], answer:0},
-    {type:'mc', prompt:'If radios are checked out alphabetically and Perez is after Nguyen, which is true?', choices:['Perez checks out before Nguyen.','Perez checks out after Nguyen.','They check out together.','Unknowable.'], answer:1},
-    {type:'mc', prompt:'Exactly two statements true: A) Lot full; B) Gate locked; C) Patrol out. If A and B true, which must be false?', choices:['A','B','C','None'], answer:2},
-    {type:'mc', prompt:'All confiscated vapes are logged. This vape is not logged. Valid conclusion?', choices:['It is not confiscated.','It might be personal property.','It is illegal.','It was logged elsewhere.'], answer:1},
-    {type:'mc', prompt:'If a route has 5 checkpoints visited in order, which sequence breaks the rule?', choices:['1-2-3-4-5','1-3-2-4-5','1-2-4-3-5','1-2-3-5-4'], answer:1}
-  ]
-};
+// REASONING (50): logic/syllogisms/order
+function buildReasoning(){
+  const items=[];
+  for(let i=0;i<15;i++){
+    items.push({type:'mc', prompt:'No vehicles are allowed in Lane 2. All delivery trucks are vehicles. Which is true?', choices:['Some delivery trucks may use Lane 2.','No delivery trucks may use Lane 2.','Only emergency vehicles may use Lane 2.','Lane 2 is closed.'], answer:1});
+  }
+  for(let i=0;i<10;i++){
+    items.push({type:'mc', prompt:'Interviews: A before B; C last. Which order is valid?', choices:['A, C, B','B, A, C','A, B, C','C, A, B'], answer:2});
+  }
+  for(let i=0;i<10;i++){
+    items.push({type:'mc', prompt:'Every third car is inspected. The 9th is inspected. Which is also inspected?', choices:['12th','13th','14th','11th'], answer:0});
+  }
+  for(let i=0;i<10;i++){
+    items.push({type:'mc', prompt:'Keys are in locker, desk, or patrol car. Not in locker. If in patrol car, Kim would have found them (she did not). Where are they?', choices:['Locker','Desk','Patrol car','Unknown'], answer:1});
+  }
+  for(let i=0;i<5;i++){
+    items.push({type:'mc', prompt:'Exactly one is true: (1) suspect wore a hat; (2) suspect wore glasses; (3) suspect wore neither. Which is true?', choices:['(1)','(2)','(3)','None'], answer:0});
+  }
+  return items;
+}
 
-// SECTION 5: Vocabulary & Report Usage (LE Terms) — MC
-const VOCAB = {
-  id:'vocab', label:'Vocabulary & Report Usage (LE Terms)', minutes:36,
-  questions:[
-    {type:'mc', prompt:'Best definition of “probable cause”.', choices:['A mere hunch','Facts that would lead a reasonable person to believe a crime was committed','Proof beyond a reasonable doubt','Any anonymous tip'], answer:1},
-    {type:'mc', prompt:'“Consensual encounter” means…', choices:['A detention without cause','A voluntary interaction where the person is free to leave','A formal arrest','A custodial interrogation'], answer:1},
-    {type:'mc', prompt:'“Contraband” refers to…', choices:['Any property','Illegal or prohibited items','Lost and found property','Evidence only'], answer:1},
-    {type:'mc', prompt:'Choose the best usage.', choices:['The suspect had a gun, which was black in color.','The suspect possessed a black handgun.','The suspect had a weapon thing that was black.','The suspect had a gun that looked scary.'], answer:1},
-    {type:'mc', prompt:'“Exigent circumstances” are…', choices:['Routine circumstances','Emergency conditions requiring immediate action','Court orders','Witness interviews'], answer:1},
-    {type:'mc', prompt:'“Chain of custody” means…', choices:['Order of suspects arrested','Documentation of evidence from collection to court','List of witnesses','Booking order'], answer:1},
-    {type:'mc', prompt:'Correct usage of “alleged”.', choices:['The alleged suspect confessed.','The alleged burglary reportedly occurred.','The alleged victim reportedly identified the suspect.','Use “alleged” sparingly—attach to acts, not as a label for a person.'], answer:3, explain:'Prefer describing alleged acts or accusations.'},
-    {type:'mc', prompt:'“Disposition” in a report commonly refers to…', choices:['Officer’s mood','Final handling/outcome of a case or call','The crime code','The court calendar'], answer:1},
-    {type:'mc', prompt:'Best synonym for “flee”.', choices:['Depart','Egress','Abscond','Saunter'], answer:2},
-    {type:'mc', prompt:'In a school setting, “SRO” stands for…', choices:['Safety Response Officer','School Resource Officer','Student Relations Officer','Security Response Official'], answer:1},
-    {type:'mc', prompt:'“Articulate” in a report context means…', choices:['Draw a diagram','Express clearly with supporting facts','Use advanced vocabulary','Speak loudly'], answer:1},
-    {type:'mc', prompt:'“Detain” vs “Arrest”:', choices:['Same thing','Detain is brief reasonable stop; arrest is taking into custody','Arrest is brief; detain is custodial','Neither has legal standard'], answer:1},
-    {type:'mc', prompt:'Best usage for objectivity.', choices:['I felt the student was lying.','The student avoided eye contact, gave inconsistent answers, and changed details.','The student seemed shady.','The student obviously lied.'], answer:1},
-    {type:'mc', prompt:'“Restitution” means…', choices:['Community service','Payment to victim for loss/damage','Court fine','Donation'], answer:1},
-    {type:'mc', prompt:'“Perimeter” in a scene means…', choices:['Inside of a room','Boundary established to control access','Only the back door','Tape length'], answer:1},
-    {type:'mc', prompt:'“Pretext stop” is…', choices:['Stop for a minor violation while investigating another suspicion','Traffic break for construction','Administrative checkpoint','Felony stop'], answer:0},
-    {type:'mc', prompt:'Correct usage of “observed”.', choices:['I observed it was suspicious.','I observed the subject remove a box from the trunk.','I observed the subject to probably be high.','I observed loudness.'], answer:1},
-    {type:'mc', prompt:'“Victim advocate” role is…', choices:['Defense attorney','Support services liaison for victims','Probation officer','Court clerk'], answer:1},
-    {type:'mc', prompt:'“Culpable” most nearly means…', choices:['Responsible/blameworthy','Lucky','Exempt','Unaware'], answer:0},
-    {type:'mc', prompt:'“Credible” most nearly means…', choices:['Convincing/believable','Visible','Recorded','Liable'], answer:0}
-  ]
-};
+// VOCAB (50): definitions & usage
+function buildVocab(){
+  const bank=[
+    ['probable cause','Facts that would lead a reasonable person to believe a crime was committed',['A mere hunch','Facts that would lead a reasonable person to believe a crime was committed','Proof beyond a reasonable doubt','Any anonymous tip']],
+    ['consensual encounter','A voluntary interaction where the person is free to leave',['A detention without cause','A voluntary interaction where the person is free to leave','A formal arrest','A custodial interrogation']],
+    ['contraband','Illegal or prohibited items',['Any property','Illegal or prohibited items','Lost and found property','Evidence only']],
+    ['exigent circumstances','Emergency conditions requiring immediate action',['Routine circumstances','Emergency conditions requiring immediate action','Court orders','Witness interviews']],
+    ['chain of custody','Documentation of evidence from collection to court',['Order of suspects arrested','Documentation of evidence from collection to court','List of witnesses','Booking order']],
+    ['disposition','Final handling/outcome of a case or call',['Officer’s mood','Final handling/outcome of a case or call','The crime code','The court calendar']],
+    ['restitution','Payment to victim for loss/damage',['Community service','Payment to victim for loss/damage','Court fine','Donation']],
+    ['perimeter','Boundary established to control access',['Inside of a room','Boundary established to control access','Only the back door','Tape length']],
+    ['articulate (verb)','Express clearly with supporting facts',['Draw a diagram','Express clearly with supporting facts','Use advanced vocabulary','Speak loudly']],
+    ['detain vs arrest','Detain=brief reasonable stop; Arrest=taking into custody',['Same thing','Detain=brief reasonable stop; Arrest=taking into custody','Arrest is brief; detain is custodial','No standards apply']]
+  ];
+  const usage=[
+    ['Choose the best report phrasing.',['The suspect had a gun, which was black in color.','The suspect possessed a black handgun.','The suspect had a weapon thing that was black.','The suspect had a gun that looked scary.'],1],
+    ['Best objective wording.',['I felt the student was lying.','The student avoided eye contact and gave inconsistent answers.','The student seemed shady.','The student obviously lied.'],1],
+    ['“Pretext stop” means…',['Stop for a minor violation while investigating another suspicion','Traffic break for construction','Administrative checkpoint','Felony stop'],0]
+  ];
+  const items=[];
+  while(items.length<50){
+    if(items.length<30){
+      const row = choice(bank); const term=row[0], def=row[1], opts=row[2].slice();
+      items.push({type:'mc', prompt:'Definition: “'+term+'”', choices:opts, answer:opts.indexOf(def)});
+    } else {
+      const u = choice(usage);
+      items.push({type:'mc', prompt:u[0], choices:u[1], answer:u[2]});
+    }
+  }
+  return items;
+}
 
+// ========= BUILD SECTIONS =========
+const WRITING = { id:'writing', label:'Writing (Clarity & Grammar)', minutes:36, questions: buildWriting() };
+const SPELLING = { id:'spelling', label:'Spelling (Common LE/Legal Words)', minutes:36, questions: buildSpelling() };
+const READING  = { id:'reading', label:'Reading Comprehension', minutes:36, questions: buildReading() };
+const REASONING= { id:'reasoning', label:'Reasoning Ability', minutes:36, questions: buildReasoning() };
+const VOCAB    = { id:'vocab', label:'Vocabulary & Report Usage (LE Terms)', minutes:36, questions: buildVocab() };
 let SECTIONS = [WRITING, SPELLING, READING, REASONING, VOCAB];
 
 // ========= STATE =========
 const state = {sectionIndex:0, qIndex:0, answers:{}, correct:0, total:0, sectionEnds:[], totalEnds:0, running:true};
 
 // ========= FIXED-TIME INITIALIZATION (36 min each, total 180) =========
-const AUTO_TIME = false; // hard off by request
+const AUTO_TIME = false;
 function prepareSectionsFromScratch(){ SECTIONS = SECTIONS.map(sec=>({ ...sec, questions: shuffle(sec.questions.slice()) })); }
 function computeTimers(restored){
   const now=Date.now(); let acc=0; state.sectionEnds=[];
@@ -242,55 +269,168 @@ function computeTimers(restored){
 }
 function saveProgress(pause=true){
   const now=Date.now(); const secEnd = state.sectionEnds[state.sectionIndex]; const remainingCurrentMs = Math.max(0, secEnd - now);
-  const payload = {version:3, paused:!!pause, remainingCurrentMs, sectionIndex: state.sectionIndex, qIndex: state.qIndex, answers: state.answers, correct: state.correct, sections: SECTIONS};
+  const payload = {version:4, paused:!!pause, remainingCurrentMs, sectionIndex: state.sectionIndex, qIndex: state.qIndex, answers: state.answers, correct: state.correct, sections: SECTIONS};
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   if(pause){ state.running=false; $('resumeBtn').style.display='inline-block'; alert('Saved & paused. You can close the tab and resume later.'); }
 }
 function tryLoadSaved(){ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return null; try{return JSON.parse(raw)}catch{ return null } }
-function applySaved(saved, autoResume=true){ if(!saved) return false; SECTIONS = saved.sections||SECTIONS; state.answers=saved.answers||{}; state.correct=saved.correct||0; state.sectionIndex=saved.sectionIndex||0; state.qIndex=saved.qIndex||0; computeTimers({remainingCurrentMs: saved.remainingCurrentMs}); state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0); if(autoResume){ state.running=true; $('resumeBanner').style.display='none'; $('resumeBtn').style.display='none'; } else { state.running=false; $('resumeBanner').style.display='flex'; $('resumeBtn').style.display='inline-block'; } return true; }
+function applySaved(saved, autoResume=true){
+  if(!saved) return false;
+  SECTIONS = saved.sections||SECTIONS;
+  state.answers=saved.answers||{};
+  state.correct=saved.correct||0;
+  state.sectionIndex=saved.sectionIndex||0;
+  state.qIndex=saved.qIndex||0;
+  computeTimers({remainingCurrentMs: saved.remainingCurrentMs});
+  state.total = SECTIONS.reduce(function(a,s){return a+s.questions.length},0);
+  if(autoResume){
+    state.running=true; $('resumeBanner').style.display='none'; $('resumeBtn').style.display='none';
+  } else {
+    state.running=false; $('resumeBanner').style.display='flex'; $('resumeBtn').style.display='inline-block';
+  }
+  return true;
+}
 function resetAll(){ localStorage.removeItem(STORAGE_KEY); location.reload(); }
 
 function init(){
   const saved = tryLoadSaved();
   if(saved){ applySaved(saved,false); }
-  else { prepareSectionsFromScratch(); computeTimers(null); state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0); }
+  else { prepareSectionsFromScratch(); computeTimers(null); state.total = SECTIONS.reduce(function(a,s){return a+s.questions.length},0); }
   buildTabs(); render(); tick();
 }
 
 // ========= UI RENDER =========
-function buildTabs(){ const tabs=$('tabs'); tabs.innerHTML=''; SECTIONS.forEach((sec,i)=>{ const b=document.createElement('button'); b.className='tab'+(i===state.sectionIndex?' active':''); b.textContent=`${i+1}. ${sec.label}`; b.onclick=()=>{ state.sectionIndex=i; state.qIndex=0; renderTabs(); render(); }; tabs.appendChild(b); }); }
-function renderTabs(){ [...document.querySelectorAll('.tab')].forEach((el,idx)=> el.classList.toggle('active', idx===state.sectionIndex)); }
+function buildTabs(){
+  const tabs=$('tabs'); tabs.innerHTML='';
+  SECTIONS.forEach(function(sec,i){
+    const b=document.createElement('button');
+    b.className='tab'+(i===state.sectionIndex?' active':'');
+    b.textContent=(i+1)+'. '+sec.label;
+    b.onclick=function(){ state.sectionIndex=i; state.qIndex=0; renderTabs(); render(); };
+    tabs.appendChild(b);
+  });
+}
+function renderTabs(){ Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(el,idx){ el.classList.toggle('active', idx===state.sectionIndex); }); }
 
 function render(){
-  const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex]; const sKey=`${sec.id}:${state.qIndex}`; const ans=state.answers[sKey];
-  const answered = Object.keys(state.answers).length; $('scoreBadge').textContent=`Score: ${Object.values(state.answers).filter(a=>a.correct).length}`; $('progressText').textContent=`Question ${state.qIndex+1} of ${sec.questions.length} (Section ${state.sectionIndex+1}/${SECTIONS.length}) • Answered: ${answered}/${state.total}`; $('progressBar').style.width = `${(state.qIndex+1)/sec.questions.length*100}%`;
-  const screen=$('screen'); screen.innerHTML=''; const qWrap=document.createElement('div'); qWrap.className='q'; const h=document.createElement('h3'); h.textContent=q.prompt; qWrap.appendChild(h);
+  const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex]; const sKey=sec.id+':'+state.qIndex; const ans=state.answers[sKey];
+  const answered = Object.keys(state.answers).length; const correctCnt = Object.values(state.answers).filter(function(a){return a.correct}).length;
+  $('scoreBadge').textContent='Score: '+correctCnt;
+  $('progressText').textContent='Question '+(state.qIndex+1)+' of '+sec.questions.length+' (Section '+(state.sectionIndex+1)+'/'+SECTIONS.length+') • Answered: '+answered+'/'+state.total;
+  $('progressBar').style.width = ((state.qIndex+1)/sec.questions.length*100)+'%';
+
+  const screen=$('screen'); screen.innerHTML='';
+  const qWrap=document.createElement('div'); qWrap.className='q';
+  const h=document.createElement('h3'); h.textContent=q.prompt; qWrap.appendChild(h);
+
   if(q.type==='mc'){
-    q.choices.forEach((c,i)=>{ const row=document.createElement('label'); row.className='opt'; const radio=document.createElement('input'); radio.type='radio'; radio.name='mc'; radio.value=i; radio.checked = ans?.choice===i; radio.onchange=()=>gradeMC(i); const span=document.createElement('div'); span.textContent=c; row.appendChild(radio); row.appendChild(span); qWrap.appendChild(row); if(ans){ if(i===q.answer){ row.style.borderColor='rgba(26,213,152,.9)'; } if(ans.choice===i && i!==q.answer){ row.style.borderColor='rgba(255,90,122,.9)'; } } }); }
-  if(q.type==='spelling'){
-    const input=document.createElement('input'); input.type='text'; input.placeholder='Type the correct spelling…'; input.value = ans?.text||''; const check=document.createElement('button'); check.className='primary'; check.textContent='Check'; const fb=document.createElement('div'); fb.className='feedback'; check.onclick=()=>gradeSpelling(input.value); qWrap.appendChild(input); qWrap.appendChild(document.createElement('div')).style.height='8px'; qWrap.appendChild(check); qWrap.appendChild(fb); if(ans){ fb.textContent = ans.correct? 'Correct ✔' : `Incorrect ✖ — Correct: ${q.answer}`; fb.className = 'feedback ' + (ans.correct? 'good':'bad'); } }
-  const exp=document.createElement('div'); exp.className='muted'; exp.style.marginTop='8px'; if(ans){ exp.innerHTML = `<strong>Why:</strong> ${q.explain||'—'}`; } qWrap.appendChild(exp); screen.appendChild(qWrap);
-  $('prevBtn').disabled = state.qIndex===0; $('nextBtn').disabled = state.qIndex===sec.questions.length-1;
+    q.choices.forEach(function(c,i){
+      const row=document.createElement('label'); row.className='opt';
+      const radio=document.createElement('input'); radio.type='radio'; radio.name='mc'; radio.value=i; radio.checked = ans && ans.choice===i;
+      radio.onchange=function(){ gradeMC(i); };
+      const span=document.createElement('div'); span.textContent=c;
+      row.appendChild(radio); row.appendChild(span); qWrap.appendChild(row);
+      if(ans){
+        if(i===q.answer){ row.style.borderColor='rgba(26,213,152,.9)'; }
+        if(ans.choice===i && i!==q.answer){ row.style.borderColor='rgba(255,90,122,.9)'; }
+      }
+    });
+  }
+
+  const exp=document.createElement('div'); exp.className='muted'; exp.style.marginTop='8px';
+  if(ans && q.explain){ exp.innerHTML = '<strong>Why:</strong> '+q.explain; }
+  qWrap.appendChild(exp);
+  screen.appendChild(qWrap);
+
+  $('prevBtn').disabled = state.qIndex===0;
+  $('nextBtn').disabled = state.qIndex===sec.questions.length-1;
 }
 
 // ========= GRADING =========
-function gradeMC(choice){ const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex]; const key=`${sec.id}:${state.qIndex}`; const already=state.answers[key]?.graded; const correct=(choice===q.answer); state.answers[key]={graded:true, choice, correct}; if(!already && correct){ /* increment shown via score recompute */ } render(); }
-function gradeSpelling(text){ const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex]; const key=`${sec.id}:${state.qIndex}`; const already=state.answers[key]?.graded; const correct=((text||'').trim().toLowerCase()===q.answer.toLowerCase()); state.answers[key]={graded:true, text, correct}; render(); }
+function gradeMC(choiceIdx){
+  const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex]; const key=sec.id+':'+state.qIndex;
+  const correct=(choiceIdx===q.answer);
+  state.answers[key]={graded:true, choice:choiceIdx, correct};
+  render();
+}
 
 // ========= NAV + TIMERS =========
-$('prevBtn').onclick=()=>{ if(state.qIndex>0){ state.qIndex--; render(); } };
-$('nextBtn').onclick=()=>{ const sec=SECTIONS[state.sectionIndex]; if(state.qIndex<sec.questions.length-1){ state.qIndex++; render(); } };
-$('finishBtn').onclick=()=> showSummary(); $('saveBtn').onclick=()=> saveProgress(true); $('resumeBtn').onclick=()=> resumeNow(); $('resumeNow').onclick=()=> resumeNow(); $('startOver').onclick=()=> resetAll();
+$('prevBtn').onclick=function(){ if(state.qIndex>0){ state.qIndex--; render(); } };
+$('nextBtn').onclick=function(){ const sec=SECTIONS[state.sectionIndex]; if(state.qIndex<sec.questions.length-1){ state.qIndex++; render(); } };
+$('finishBtn').onclick=function(){ showSummary(); };
+$('saveBtn').onclick=function(){ saveProgress(true); };
+$('resumeBtn').onclick=function(){ resumeNow(); };
+$('resumeNow').onclick=function(){ resumeNow(); };
+$('startOver').onclick=function(){ resetAll(); };
+
 function resumeNow(){ const saved=tryLoadSaved(); if(saved){ applySaved(saved,true); render(); tick(); }}
-function tick(){ if(!state.running) return; const now=Date.now(); const totalLeft=state.totalEnds-now; $('totalTimer').textContent=fmt(totalLeft); const secEnd=state.sectionEnds[state.sectionIndex]; $('sectionTimer').textContent=fmt(secEnd-now); if(totalLeft<=0){ state.running=false; showSummary(true); return; } requestAnimationFrame(tick); }
+
+function tick(){
+  if(!state.running) return;
+  const now=Date.now();
+  const totalLeft=state.totalEnds-now; $('totalTimer').textContent=fmt(totalLeft);
+  const secEnd=state.sectionEnds[state.sectionIndex]; $('sectionTimer').textContent=fmt(secEnd-now);
+  if(totalLeft<=0){ state.running=false; showSummary(true); return; }
+  requestAnimationFrame(tick);
+}
 
 // ========= SUMMARY =========
-function showSummary(timeUp=false){ state.running=false; const screen=$('screen'); screen.innerHTML=''; $('navControls').style.display='none'; const wrapper=document.createElement('div'); wrapper.className='summary'; const totalQ = SECTIONS.reduce((a,s)=>a+s.questions.length,0); const correct = Object.values(state.answers).filter(a=>a.correct).length; const percent = Math.round((correct/totalQ)*100); const h2=document.createElement('h2'); h2.textContent = timeUp? 'Time! Results & Review':'Results & Review'; wrapper.appendChild(h2); const stats=document.createElement('div'); stats.innerHTML = `<span class="stat">Score: <strong>${correct}/${totalQ}</strong> (${percent}%)</span>` + SECTIONS.map((sec,i)=>{ const keys = Object.keys(state.answers).filter(k=>k.startsWith(sec.id+':')); const c = keys.filter(k=>state.answers[k]?.correct).length; return ` <span class="stat">${i+1}. ${sec.label}: <strong>${c}/${sec.questions.length}</strong></span>`; }).join(''); wrapper.appendChild(stats); const misses=[]; SECTIONS.forEach((sec)=>{ sec.questions.forEach((q,idx)=>{ const k=`${sec.id}:${idx}`; const a=state.answers[k]; if(!a || !a.correct){ misses.push({sec, q, idx, a}); } }) }); if(misses.length){ const t=document.createElement('h3'); t.textContent='Missed or Unanswered Questions'; wrapper.appendChild(t); misses.forEach(m=>{ const div=document.createElement('div'); div.className='miss'; const chosen = m.a?.choice!=null ? m.q.choices?.[m.a.choice] : (m.a?.text||'(no answer)'); let correctText = m.q.type==='mc' ? m.q.choices[m.q.answer] : m.q.answer; div.innerHTML = `<strong>Section:</strong> ${m.sec.label}<br><strong>Question:</strong> ${m.q.prompt}<br><strong>Your answer:</strong> ${chosen}<br><strong>Correct:</strong> ${correctText}${m.q.explain? `<br><em>Why:</em> ${m.q.explain}`:''}`; wrapper.appendChild(div); }); }
-  const actions=document.createElement('div'); actions.className='row'; const restart=document.createElement('button'); restart.className='ghost'; restart.textContent='Start a New Attempt'; restart.onclick=()=>{ resetAll(); }; const saveRep=document.createElement('button'); saveRep.className='primary'; saveRep.textContent='Save Results'; saveRep.onclick=()=>{ saveProgress(true); }; actions.appendChild(restart); actions.appendChild(saveRep); wrapper.appendChild(actions); screen.appendChild(wrapper); }
+function showSummary(timeUp){
+  state.running=false;
+  const screen=$('screen'); screen.innerHTML=''; $('navControls').style.display='none';
+  const wrapper=document.createElement('div'); wrapper.className='summary';
+  const totalQ = SECTIONS.reduce(function(a,s){return a+s.questions.length},0);
+  const correct = Object.values(state.answers).filter(function(a){return a.correct}).length;
+  const percent = Math.round((correct/totalQ)*100);
+  const h2=document.createElement('h2'); h2.textContent = timeUp? 'Time! Results & Review':'Results & Review';
+  wrapper.appendChild(h2);
+  const stats=document.createElement('div');
+  let html = '<span class="stat">Score: <strong>'+correct+'/'+totalQ+'</strong> ('+percent+'%)</span>';
+  SECTIONS.forEach(function(sec,i){
+    const keys = Object.keys(state.answers).filter(function(k){return k.indexOf(sec.id+':')===0});
+    const c = keys.filter(function(k){return state.answers[k] && state.answers[k].correct}).length;
+    html += ' <span class="stat">'+(i+1)+'. '+sec.label+': <strong>'+c+'/'+sec.questions.length+'</strong></span>';
+  });
+  stats.innerHTML = html; wrapper.appendChild(stats);
+
+  const misses=[];
+  SECTIONS.forEach(function(sec){
+    sec.questions.forEach(function(q,idx){
+      const k=sec.id+':'+idx; const a=state.answers[k];
+      if(!a || !a.correct){ misses.push({sec:sec, q:q, idx:idx, a:a}); }
+    });
+  });
+  if(misses.length){
+    const t=document.createElement('h3'); t.textContent='Missed or Unanswered Questions'; wrapper.appendChild(t);
+    misses.forEach(function(m){
+      const div=document.createElement('div'); div.className='miss';
+      const chosen = (m.a && m.a.choice!=null) ? m.q.choices[m.a.choice] : '(no answer)';
+      const correctText = m.q.choices[m.q.answer];
+      div.innerHTML = '<strong>Section:</strong> '+m.sec.label+'<br><strong>Question:</strong> '+m.q.prompt+'<br><strong>Your answer:</strong> '+chosen+'<br><strong>Correct:</strong> '+correctText+(m.q.explain? '<br><em>Why:</em> '+m.q.explain:'');
+      wrapper.appendChild(div);
+    });
+  }
+
+  const actions=document.createElement('div'); actions.className='row';
+  const restart=document.createElement('button'); restart.className='ghost'; restart.textContent='Start a New Attempt'; restart.onclick=function(){ resetAll(); };
+  const saveRep=document.createElement('button'); saveRep.className='primary'; saveRep.textContent='Save Results'; saveRep.onclick=function(){ saveProgress(true); };
+  actions.appendChild(restart); actions.appendChild(saveRep);
+  wrapper.appendChild(actions);
+  screen.appendChild(wrapper);
+}
 
 // ========= BOOT =========
-window.addEventListener('beforeunload', ()=>{ if(state.running){ saveProgress(true); } });
-init();
+window.addEventListener('beforeunload', function(){ if(state.running){ saveProgress(true); } });
+function buildTabsOnce(){ /* no-op, kept for future */ }
+function computeTotalQuestions(){ state.total = SECTIONS.reduce(function(a,s){return a+s.questions.length},0); }
+function startFresh(){ prepareSectionsFromScratch(); computeTimers(null); computeTotalQuestions(); }
+function init(){
+  const saved = tryLoadSaved();
+  if(saved){ applySaved(saved,false); }
+  else { startFresh(); }
+  buildTabs(); render(); tick();
+}
+buildTabsOnce(); init();
 </script>
 </body>
 </html>
