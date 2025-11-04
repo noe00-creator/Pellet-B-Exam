@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PELLETB Practice Exam</title>
+  <style>
+    :root{--bg:#0b1020;--card:#121936;--ink:#f6f8ff;--muted:#a9b3d0;--accent:#7aa2ff;--good:#1ad598;--bad:#ff5a7a}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1e,#0f1630);} 
+    .wrap{max-width:980px;margin:0 auto;padding:24px;color:var(--ink)}
+    h1{font-weight:800;letter-spacing:.3px;margin:4px 0 12px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 18px;box-shadow:0 12px 20px rgba(0,0,0,.25)}
+    .row{display:flex;gap:14px;flex-wrap:wrap}
+    .badge{display:inline-flex;gap:8px;align-items:center;background:#0d1330;border:1px solid rgba(255,255,255,.08);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
+    button{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    button.primary{background:var(--accent);color:#08112b}
+    button.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.15)}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .pill{display:inline-block;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:999px;color:var(--muted);font-size:12px;margin-right:6px}
+    .section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+    .tab{background:#0e1440;border:1px solid rgba(255,255,255,.08);padding:8px 12px;border-radius:12px;color:var(--muted);cursor:pointer;font-weight:700}
+    .tab.active{background:var(--accent);color:#070e28}
+    .timer{font-variant-numeric:tabular-nums;font-weight:800}
+    .q{margin:12px 0 18px}
+    .q h3{margin:0 0 10px;font-size:18px}
+    .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(255,255,255,.12);padding:10px;border-radius:12px;margin:8px 0;background:#0c1234;cursor:pointer}
+    .opt input{margin-top:2px}
+    .feedback{margin-top:8px;font-weight:700}
+    .feedback.good{color:var(--good)}
+    .feedback.bad{color:var(--bad)}
+    .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px}
+    .progress{height:8px;background:#0a0f28;border-radius:8px;overflow:hidden}
+    .bar{height:8px;background:var(--accent);width:0}
+    .muted{color:var(--muted)}
+    input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0b1233;color:var(--ink)}
+    .small{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr;gap:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>PELLETB Practice Exam</h1>
+      <div class="row">
+        <span class="badge"><strong>Total Time:</strong> <span class="timer" id="totalTimer">03:00:00</span></span>
+        <span class="badge"><strong>Section Time:</strong> <span class="timer" id="sectionTimer">45:00</span></span>
+        <span class="badge" id="scoreBadge">Score: 0</span>
+      </div>
+      <div class="section-tabs" id="tabs"></div>
+      <div id="screen"></div>
+      <div class="controls">
+        <div style="flex:1">
+          <div class="progress"><div id="progressBar" class="bar"></div></div>
+          <div class="small" id="progressText">Question 0 of 0</div>
+        </div>
+        <div class="row">
+          <button class="ghost" id="prevBtn">◀ Prev</button>
+          <button class="primary" id="nextBtn">Next ▶</button>
+        </div>
+      </div>
+      <div class="small" style="margin-top:8px">Tip: You’ll see whether you were correct immediately after answering. You can change answers anytime within the section.</div>
+    </div>
+  </div>
+
+<script>
+// ======= DATA =======
+// Four sections: Writing (Clarity & Grammar), Spelling (LE/report words), Reading, Reasoning
+// Add/modify questions below. Types: 'mc', 'spelling'. For 'spelling', provide correct spelling in 'answer'.
+const SECTIONS = [
+  {
+    id: 'writing', label: 'Writing (Clarity & Grammar)', minutes: 45,
+    questions: [
+      {type:'mc', prompt:'Choose the sentence that is most clear and grammatically correct.', choices:[
+        'The suspect, who we seen earlier, was detained.',
+        'The suspect whom we saw earlier was detained.',
+        'The suspect who we seen earlier, was detained.',
+        'The suspect which we saw earlier was detained.'
+      ], answer:1, explain:'"whom" is correct as the object of the verb "saw"; no comma is needed.'},
+      {type:'mc', prompt:'Select the sentence with correct comma usage.', choices:[
+        'Officers secured the scene and, waited for detectives.',
+        'Officers secured the scene, and waited for detectives.',
+        'Officers secured the scene and waited for detectives.',
+        'Officers, secured the scene and waited for detectives.'
+      ], answer:2, explain:'No comma is needed because the compound predicate shares the same subject.'},
+      {type:'mc', prompt:'Choose the sentence free of ambiguity.', choices:[
+        'The victim reported seeing a man with a hat and a backpack running.',
+        'The victim reported that a man wearing a hat and backpack was running.',
+        'The victim reported seeing a man running with a hat and backpack (unclear).',
+        'Running, the victim reported a man with a hat and backpack.'
+      ], answer:1, explain:'Option 2 specifies the man wore the hat and backpack, not the victim.'},
+      {type:'mc', prompt:'Pick the best transition.', choices:[
+        'The door was forced open. However the frame was undamaged.',
+        'The door was forced open, however, the frame was undamaged.',
+        'The door was forced open; however, the frame was undamaged.',
+        'The door was forced open however the frame was undamaged.'
+      ], answer:2, explain:'Use a semicolon before a conjunctive adverb and a comma after it.'},
+      {type:'mc', prompt:'Select the correct subject–verb agreement.', choices:[
+        'Neither the witnesses nor the suspect are credible.',
+        'Neither the witnesses nor the suspect is credible.',
+        'Neither the witness nor the suspects is credible.',
+        'Neither the witnesses nor the suspects is credible.'
+      ], answer:1, explain:'With "neither/nor," the verb agrees with the nearer subject: "suspect is".'},
+      {type:'mc', prompt:'Choose the most concise option.', choices:[
+        'Due to the fact that it was raining, we delayed the search.',
+        'Because it was raining, we delayed the search.',
+        'On account of the rain, a delay of the search was effectuated.',
+        'As a result of rain, there was a delay of the search.'
+      ], answer:1, explain:'"Because it was raining" is clear and concise.'}
+    ]
+  },
+  {
+    id: 'spelling', label: 'Spelling (Law & Report Words)', minutes: 45,
+    questions: [
+      {type:'spelling', prompt:'Type the correct spelling: The judge issued a ____ to appear in court.', answer:'subpoena', explain:'Correct spelling: subpoena.'},
+      {type:'spelling', prompt:'Type the correct spelling: The suspect was found in ____ of narcotics.', answer:'possession', explain:'Double s: poss-ess-ion.'},
+      {type:'spelling', prompt:'Type the correct spelling: We began fixed-camera ____ at the location.', answer:'surveillance', explain:'"Surveillance" has the double "l" and "eillance" ending.'},
+      {type:'spelling', prompt:'Type the correct spelling: The incident ____ at 1930 hours.', answer:'occurred', explain:'Past tense with double "r": occurred.'},
+      {type:'spelling', prompt:'Type the correct spelling: The officer did not ____ the vehicle.', answer:'pursue', explain:'"Pursue," not "persue".'},
+      {type:'spelling', prompt:'Type the correct spelling: The property was kept in the evidence _____.', answer:'warehouse', explain:'Compound word: warehouse.'},
+      {type:'spelling', prompt:'Type the correct spelling: The team executed a search ____ issued by a judge.', answer:'warrant', explain:'Warrant (two r’s).'},
+      {type:'spelling', prompt:'Type the correct spelling: The report was kept ____ from opinion.', answer:'separate', explain:'"Separate," not "seperate".'},
+      {type:'spelling', prompt:'Type the correct spelling: The defendant was found not guilty and received an ____.', answer:'acquittal', explain:'Two c’s, two t’s: acquittal.'},
+      {type:'spelling', prompt:'Type the correct spelling: Officers read the ____ rights.', answer:'Miranda', explain:'Capitalized surname: Miranda.'}
+    ]
+  },
+  {
+    id: 'reading', label: 'Reading Comprehension', minutes: 45,
+    questions: [
+      {type:'mc', prompt:'Passage: Officers responded to a call at 2215 hours regarding a disturbance at 840 Pine St. Upon arrival, they observed a broken window and found a wallet on the sidewalk bearing the name “J. Ramos.” Neighbors reported seeing a blue sedan depart eastbound at high speed two minutes prior. Question: Which detail MOST strongly suggests a forced entry?', choices:[
+        'The time of the call.', 'The broken window.', 'The wallet on the sidewalk.', 'The sedan traveling eastbound.'
+      ], answer:1, explain:'A broken window indicates the structure may have been breached.'},
+      {type:'mc', prompt:'Passage: The department’s new policy requires officers to log each use of a control hold in the field training app within 24 hours. Supervisors will review entries weekly. Question: What is the primary purpose of the weekly review?', choices:[
+        'To discipline officers who use control holds.', 'To ensure timely maintenance of the app.', 'To provide oversight and identify training needs.', 'To eliminate the use of control holds.'
+      ], answer:2, explain:'Reviews provide oversight and can reveal training gaps.'},
+      {type:'mc', prompt:'Passage: During a burglary investigation, shoe prints were found leading from the rear door to the alley, where a bicycle lock was discovered. Question: Which inference is MOST reasonable?', choices:[
+        'The suspect definitely escaped on a bicycle.', 'The suspect may have used or intended to use a bicycle.', 'The shoe prints were left by a neighbor.', 'The lock belongs to the victim.'
+      ], answer:1, explain:'Evidence suggests a bicycle connection but does not prove it.'},
+      {type:'mc', prompt:'Passage: A school resource officer held a safety talk. Afterward, the number of students reporting bullying increased. Question: What is the BEST explanation?', choices:[
+        'Bullying incidents increased after the talk.', 'Students became more willing to report incidents.', 'The talk encouraged false reports.', 'The officer failed to communicate clearly.'
+      ], answer:1, explain:'Awareness often increases reporting rather than incidents.'}
+    ]
+  },
+  {
+    id: 'reasoning', label: 'Reasoning Ability', minutes: 45,
+    questions: [
+      {type:'mc', prompt:'All trespassers in the park after 10 p.m. receive citations. Carlos is in the park at 11 p.m. What MUST be true?', choices:[
+        'Carlos will be arrested.', 'Carlos will receive a citation.', 'Carlos is a minor.', 'Carlos has committed burglary.'
+      ], answer:1, explain:'Given the rule, he must be cited; arrest is not implied.'},
+      {type:'mc', prompt:'Evidence lockers A, B, and C must be checked in that order. If B is unavailable, C cannot be checked. Today, A was checked; C was not checked. What can be inferred?', choices:[
+        'B was available and checked.', 'B was unavailable.', 'A was unavailable.', 'C was checked before A.'
+      ], answer:1, explain:'Since C was not checked, B must have been unavailable.'},
+      {type:'mc', prompt:'If no vehicles are allowed in Lane 2 and all delivery trucks are vehicles, which is true?', choices:[
+        'Some delivery trucks may use Lane 2.', 'No delivery trucks may use Lane 2.', 'Only emergency vehicles may use Lane 2.', 'Lane 2 is closed.'
+      ], answer:1, explain:'Delivery trucks are vehicles, so they cannot use Lane 2.'},
+      {type:'mc', prompt:'The keys are in the locker, the desk, or the patrol car. They are not in the locker. If they are in the patrol car, Officer Lee would have found them, but she did not. Where are the keys?', choices:[
+        'Locker', 'Desk', 'Patrol car', 'Unknown'
+      ], answer:1, explain:'Eliminate locker; eliminate patrol car based on Lee; remaining: desk.'}
+    ]
+  }
+];
+
+// ======= ENGINE =======
+const state = {sectionIndex:0, qIndex:0, answers:{}, correct:0, total:0, sectionEnds:[], totalEnds:0, running:true};
+
+function $(id){return document.getElementById(id)}
+
+function formatTime(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  const hh=String(Math.floor(s/3600)).padStart(2,'0');
+  const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const ss=String(s%60).padStart(2,'0');
+  return `${hh}:${mm}:${ss}`
+}
+
+function init(){
+  // Build tabs
+  const tabs = $('tabs');
+  SECTIONS.forEach((sec,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===0?' active':'');
+    b.textContent=`${i+1}. ${sec.label}`;
+    b.onclick=()=>switchSection(i);
+    tabs.appendChild(b);
+  });
+  // Timers
+  const now=Date.now();
+  let acc=0; state.sectionEnds = SECTIONS.map(s=>{acc+=s.minutes*60*1000; return now+acc});
+  state.totalEnds = state.sectionEnds[state.sectionEnds.length-1];
+  state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0);
+  render();
+  tick();
+}
+
+function switchSection(i){
+  state.sectionIndex=i; state.qIndex=0; renderTabs(); render();
+}
+
+function renderTabs(){
+  [...document.querySelectorAll('.tab')].forEach((el,idx)=>{
+    el.classList.toggle('active', idx===state.sectionIndex);
+  })
+}
+
+function render(){
+  const sec=SECTIONS[state.sectionIndex];
+  const q=sec.questions[state.qIndex];
+  const sKey=`${sec.id}:${state.qIndex}`;
+  const ans=state.answers[sKey];
+
+  // progress
+  const answered = Object.keys(state.answers).length;
+  $('scoreBadge').textContent=`Score: ${state.correct}`;
+  $('progressText').textContent=`Question ${state.qIndex+1} of ${sec.questions.length} (Section ${state.sectionIndex+1}/${SECTIONS.length}) • Total answered: ${answered}/${state.total}`;
+  $('progressBar').style.width = `${(state.qIndex+1)/sec.questions.length*100}%`;
+
+  // screen
+  const screen=$('screen');
+  screen.innerHTML='';
+  const qWrap=document.createElement('div');
+  qWrap.className='q';
+  const h=document.createElement('h3'); h.textContent=q.prompt; qWrap.appendChild(h);
+
+  if(q.type==='mc'){
+    q.choices.forEach((c,i)=>{
+      const row=document.createElement('label'); row.className='opt';
+      const radio=document.createElement('input'); radio.type='radio'; radio.name='mc'; radio.value=i; radio.checked = ans?.choice===i;
+      radio.onchange=()=>gradeMC(i);
+      const span=document.createElement('div'); span.textContent=c;
+      row.appendChild(radio); row.appendChild(span);
+      qWrap.appendChild(row);
+      if(ans){
+        if(i===q.answer){ row.style.borderColor='rgba(26,213,152,.9)'; }
+        if(ans.choice===i && i!==q.answer){ row.style.borderColor='rgba(255,90,122,.9)'; }
+      }
+    });
+  }
+  if(q.type==='spelling'){
+    const input=document.createElement('input'); input.type='text'; input.placeholder='Type the correct spelling…'; input.value = ans?.text||'';
+    const check=document.createElement('button'); check.className='primary'; check.textContent='Check';
+    const fb=document.createElement('div'); fb.className='feedback';
+    check.onclick=()=>gradeSpelling(input.value);
+    qWrap.appendChild(input); qWrap.appendChild(document.createElement('div')).style.height='8px'; qWrap.appendChild(check); qWrap.appendChild(fb);
+    if(ans){
+      fb.textContent = ans.correct? 'Correct ✔' : `Incorrect ✖ — Correct: ${q.answer}`;
+      fb.className = 'feedback ' + (ans.correct? 'good':'bad');
+    }
+  }
+
+  // explanation
+  const exp=document.createElement('div'); exp.className='muted'; exp.style.marginTop='8px';
+  if(ans){ exp.innerHTML = `<strong>Why:</strong> ${q.explain||'—'}`; }
+  qWrap.appendChild(exp);
+
+  screen.appendChild(qWrap);
+
+  $('prevBtn').disabled = state.qIndex===0;
+  $('nextBtn').disabled = state.qIndex===sec.questions.length-1;
+}
+
+function gradeMC(choice){
+  const sec=SECTIONS[state.sectionIndex];
+  const q=sec.questions[state.qIndex];
+  const key=`${sec.id}:${state.qIndex}`;
+  const already = state.answers[key]?.graded;
+  const correct = choice===q.answer;
+  state.answers[key] = {graded:true, choice, correct};
+  if(!already){ if(correct) state.correct++; }
+  render();
+}
+
+function gradeSpelling(text){
+  const sec=SECTIONS[state.sectionIndex];
+  const q=sec.questions[state.qIndex];
+  const key=`${sec.id}:${state.qIndex}`;
+  const already = state.answers[key]?.graded;
+  const correct = (text||'').trim().toLowerCase() === q.answer.toLowerCase();
+  state.answers[key] = {graded:true, text, correct};
+  if(!already){ if(correct) state.correct++; }
+  render();
+}
+
+$('prevBtn').onclick=()=>{ if(state.qIndex>0){ state.qIndex--; render(); } };
+$('nextBtn').onclick=()=>{ const sec=SECTIONS[state.sectionIndex]; if(state.qIndex<sec.questions.length-1){ state.qIndex++; render(); } };
+
+function tick(){
+  if(!state.running) return;
+  const now=Date.now();
+  const totalLeft = state.totalEnds - now;
+  $('totalTimer').textContent = formatTime(totalLeft);
+  const secEnd = state.sectionEnds[state.sectionIndex];
+  $('sectionTimer').textContent = formatTime(secEnd - now);
+  if(totalLeft<=0){ state.running=false; alert('Time! Review your answers and refresh to try again.'); }
+  requestAnimationFrame(tick);
+}
+
+init();
+</script>
+</body>
+</html>
