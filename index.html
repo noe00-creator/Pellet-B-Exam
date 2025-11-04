@@ -94,6 +94,7 @@ function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.
 
 // ========= QUESTION BANK (expanded) =========
 // NOTE: We will randomize question order on first run, then save it so resume keeps the same order.
+// You can tune timing by enabling AUTO_TIME below.
 let SECTIONS = [
   {
     id:'writing', label:'Writing (Clarity & Grammar)', minutes:45,
@@ -163,6 +164,7 @@ let SECTIONS = [
   {
     id:'spelling', label:'Spelling (Law & Report Words)', minutes:45,
     questions:[
+      // This section intentionally uses INPUT (not multiple choice) to train exact spelling.
       {type:'spelling', prompt:'Type the correct spelling: The judge issued a ____ to appear in court.', answer:'subpoena', explain:'Correct spelling: subpoena.'},
       {type:'spelling', prompt:'Type the correct spelling: The suspect was found in ____ of narcotics.', answer:'possession', explain:'Double s: poss-ess-ion.'},
       {type:'spelling', prompt:'Type the correct spelling: We began fixed-camera ____ at the location.', answer:'surveillance', explain:'Double “l” + “eillance”.'},
@@ -177,7 +179,7 @@ let SECTIONS = [
       {type:'spelling', prompt:'Type the correct spelling: The court entered a default ________ against the defendant.', answer:'judgment', explain:'U.S. legal spelling: “judgment”.'},
       {type:'spelling', prompt:'Type the correct spelling: The cash was subject to civil ________.', answer:'forfeiture', explain:'for-fei-ture.'},
       {type:'spelling', prompt:'Type the correct spelling: The school requested a parent-_______ to discuss attendance.', answer:'liaison', explain:'liai-son.'},
-      {type:'spelling', prompt:'Type the correct spelling: The knife was seized, not ________.', answer:'seized', explain:'Verb “seize” → “seized”.'},
+      {type:'spelling', prompt:'Type the correct spelling: The property was ______ and logged.', answer:'seized', explain:'Verb “seize” → “seized”.'},
       {type:'spelling', prompt:'Type the correct spelling: The offense is a ________ (less than a felony).', answer:'misdemeanor', explain:'mis-de-mean-or.'},
       {type:'spelling', prompt:'Type the correct spelling: The officer noted the suspect showed ________ (not “resistence”).', answer:'resistance', explain:'resis-tance.'},
       {type:'spelling', prompt:'Type the correct spelling: It was a repeat ________ of the policy.', answer:'violation', explain:'vio-la-tion.'},
@@ -197,7 +199,7 @@ let SECTIONS = [
       {type:'mc', prompt:'Passage: During a burglary investigation, shoe prints were found leading from the rear door to the alley, where a bicycle lock was discovered. Question: Which inference is MOST reasonable?', choices:[
         'The suspect definitely escaped on a bicycle.', 'The suspect may have used or intended to use a bicycle.', 'The shoe prints were left by a neighbor.', 'The lock belongs to the victim.'
       ], answer:1, explain:'Evidence suggests a bicycle connection but does not prove it.'},
-      {type:'mc', prompt:'Passage: A school resource officer held a safety talk. Afterward, the number of students reporting bullying increased. Question: What is the BEST explanation?', choices:[
+      {type:'mc', prompt:'Passage: A school resource officer held a safety talk. Afterward, the number of students reporting bullying increased. What is the BEST explanation?', choices:[
         'Bullying incidents increased after the talk.', 'Students became more willing to report incidents.', 'The talk encouraged false reports.', 'The officer failed to communicate clearly.'
       ], answer:1, explain:'Awareness often increases reporting rather than incidents.'},
       {type:'mc', prompt:'Passage: A city park closes at 2200 hours. A runner is contacted at 2215 hours near a locked gate and claims ignorance of the rule. What is the MOST appropriate immediate action based on policy that emphasizes education before citation?', choices:[
@@ -237,7 +239,7 @@ let SECTIONS = [
       ], answer:1, explain:'Eliminate locker; eliminate patrol car based on Lee; remaining: desk.'},
       {type:'mc', prompt:'Exactly one of the three statements is true: (1) The suspect wore a hat. (2) The suspect wore glasses. (3) The suspect wore neither. Which is true?', choices:[
         '(1)', '(2)', '(3)', 'None'
-      ], answer:0, explain:'If (3) were true, both (1) and (2) would be false (leaving only one true), but that contradicts "neither" with others false. Checking possibilities shows only (1) can be true.'},
+      ], answer:0, explain:'Test each case—only (1) can be true without contradiction.'},
       {type:'mc', prompt:'A logbook requires entries every 30 minutes starting at 0800. An entry exists at 0830 and 0900, but none at 0930. What is the earliest time a supervisor can say the policy was first violated?', choices:[
         '0830', '0900', '0930', '1000'
       ], answer:2, explain:'The missing 0930 entry is the first violation.'},
@@ -247,92 +249,56 @@ let SECTIONS = [
       {type:'mc', prompt:'At a checkpoint, every third car is inspected. The 9th car is inspected. Which of the following is also inspected?', choices:[
         '12th', '13th', '14th', '15th'
       ], answer:0, explain:'Multiples of 3 → 12th, 15th, etc.'},
-      {type:'mc', prompt:'All entry badges are numbered. Badges divisible by 4 also have a blue stripe. Badge #28 is missing a stripe. Which MUST be true?', choices:[
-        'Badge #28 is fake.', 'Badge #28 is not divisible by 4.', 'The stripe may have worn off.', 'Badge #28 was misprinted.'
-      ], answer:1, explain:'#28 ÷ 4 = 7 → actually divisible; but the rule says divisible by 4 have stripe. Missing stripe contradicts; however the only must-be-true option about divisibility is incorrect here. Correct choice: The stripe may have worn off is possible, not must. The must-true is that #28 being missing a stripe contradicts the rule, so it cannot be divisible by 4 → BUT math shows it is. To avoid ambiguity, revised: use #27 instead.'}
+      {type:'mc', prompt:'All entry badges are numbered. Badges divisible by 3 also have a blue stripe. Badge #27 is missing a stripe. Which MUST be true?', choices:[
+        'Badge #27 is fake.', 'Badge #27 is not divisible by 3.', 'The stripe may have worn off.', 'Badge #27 was misprinted.'
+      ], answer:1, explain:'#27 without a stripe means it cannot be divisible by 3 under the rule.'}
     ]
   }
 ];
 
-// Fix reasoning Q about divisibility to avoid ambiguity
-SECTIONS[3].questions.pop();
-SECTIONS[3].questions.push({type:'mc', prompt:'All entry badges are numbered. Badges divisible by 3 also have a blue stripe. Badge #27 is missing a stripe. Which MUST be true?', choices:[
-  'Badge #27 is fake.', 'Badge #27 is not divisible by 3.', 'The stripe may have worn off.', 'Badge #27 was misprinted.'
-], answer:1, explain:'#27 without a stripe means it cannot be divisible by 3 under the rule.'});
-
 // ========= STATE =========
 const state = {sectionIndex:0, qIndex:0, answers:{}, correct:0, total:0, sectionEnds:[], totalEnds:0, running:true};
 
-// ========= INITIALIZATION =========
-function prepareSectionsFromScratch(){
-  // Randomize question order for each section and compute totals
-  SECTIONS = SECTIONS.map(sec=>({
-    ...sec,
-    questions: shuffle(sec.questions.slice())
-  }));
+// ========= INITIALIZATION & AUTO-TIME =========
+// Auto-time: scale section minutes based on number of questions so the test length matches content.
+// Toggle here:
+const AUTO_TIME = true;                   // set to false to use fixed minutes per section
+const MIN_PER_MC = 2;                     // minutes per multiple-choice question
+const MIN_PER_SPELL = 1.5;                // minutes per spelling item
+const MIN_PER_READING = 2.5;              // minutes per reading item
+const MIN_PER_REASON = 2;                 // minutes per reasoning item
+const CAP_TOTAL_MINUTES = 180;            // cap total runtime (e.g., 3 hours)
+
+function minutesForSection(sec){
+  if(!AUTO_TIME) return sec.minutes;
+  let m=0;
+  sec.questions.forEach(q=>{
+    if(q.type==='mc') m+= MIN_PER_MC; 
+    else if(q.type==='spelling') m+= MIN_PER_SPELL;
+    else m+=2; // default
+  });
+  return Math.max(10, Math.round(m));
 }
 
-function computeTimers(restored){
-  const now=Date.now();
-  const mins = SECTIONS.map(s=>s.minutes);
-  let acc=0; state.sectionEnds=[];
-  for(let i=0;i<SECTIONS.length;i++){
-    let dur = mins[i]*60*1000;
-    if(restored && i===state.sectionIndex && restored.remainingCurrentMs!=null){ dur = restored.remainingCurrentMs; }
-    acc += dur; state.sectionEnds.push(now+acc);
+function applyAutoTimeCap(){
+  if(!AUTO_TIME) return;
+  const mins=SECTIONS.map(minutesForSection);
+  let total=mins.reduce((a,b)=>a+b,0);
+  if(total>CAP_TOTAL_MINUTES){
+    const factor = CAP_TOTAL_MINUTES/total;
+    SECTIONS = SECTIONS.map((s,i)=>({ ...s, minutes: Math.max(10, Math.round(mins[i]*factor)) }));
+  } else {
+    SECTIONS = SECTIONS.map((s,i)=>({ ...s, minutes: mins[i] }));
   }
-  state.totalEnds = state.sectionEnds[state.sectionEnds.length-1];
 }
-
-function saveProgress(pause=true){
-  const now=Date.now();
-  const secEnd = state.sectionEnds[state.sectionIndex];
-  const remainingCurrentMs = Math.max(0, secEnd - now);
-  const payload = {
-    version:2,
-    paused: !!pause,
-    remainingCurrentMs,
-    sectionIndex: state.sectionIndex,
-    qIndex: state.qIndex,
-    answers: state.answers,
-    correct: state.correct,
-    sections: SECTIONS // includes randomized order
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  if(pause){ state.running=false; $('resumeBtn').style.display='inline-block'; alert('Saved and paused. You can close this tab and resume later.'); }
-  else { alert('Progress saved.'); }
-}
-
-function tryLoadSaved(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(!raw) return null;
-  try{ return JSON.parse(raw); }catch(e){ return null; }
-}
-
-function applySaved(saved, autoResume=true){
-  if(!saved) return false;
-  // Restore randomized sections and answers
-  SECTIONS = saved.sections || SECTIONS;
-  state.answers = saved.answers || {};
-  state.correct = saved.correct || 0;
-  state.sectionIndex = saved.sectionIndex || 0;
-  state.qIndex = saved.qIndex || 0;
-  computeTimers({remainingCurrentMs: saved.remainingCurrentMs});
-  state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0);
-  if(autoResume){ state.running = true; $('resumeBanner').style.display='none'; $('resumeBtn').style.display='none'; }
-  else { state.running=false; $('resumeBanner').style.display='flex'; $('resumeBtn').style.display='inline-block'; }
-  return true;
-}
-
-function resetAll(){ localStorage.removeItem(STORAGE_KEY); location.reload(); }
 
 function init(){
   const saved = tryLoadSaved();
   if(saved){
-    // Load but show banner to resume
     applySaved(saved, false);
   } else {
     prepareSectionsFromScratch();
+    applyAutoTimeCap();
     computeTimers(null);
     state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0);
   }
