@@ -7,16 +7,17 @@
   <style>
     :root{--bg:#0b1020;--card:#121936;--ink:#f6f8ff;--muted:#a9b3d0;--accent:#7aa2ff;--good:#1ad598;--bad:#ff5a7a}
     *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1e,#0f1630);} 
-    .wrap{max-width:980px;margin:0 auto;padding:24px;color:var(--ink)}
+    .wrap{max-width:1024px;margin:0 auto;padding:24px;color:var(--ink)}
     h1{font-weight:800;letter-spacing:.3px;margin:4px 0 12px}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 18px;box-shadow:0 12px 20px rgba(0,0,0,.25)}
-    .row{display:flex;gap:14px;flex-wrap:wrap}
+    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
     .badge{display:inline-flex;gap:8px;align-items:center;background:#0d1330;border:1px solid rgba(255,255,255,.08);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px}
     button{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
     button.primary{background:var(--accent);color:#08112b}
     button.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.15)}
+    button.danger{background:var(--bad);color:#08112b}
+    button.good{background:var(--good);color:#04141a}
     button:disabled{opacity:.5;cursor:not-allowed}
-    .pill{display:inline-block;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:999px;color:var(--muted);font-size:12px;margin-right:6px}
     .section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
     .tab{background:#0e1440;border:1px solid rgba(255,255,255,.08);padding:8px 12px;border-radius:12px;color:var(--muted);cursor:pointer;font-weight:700}
     .tab.active{background:var(--accent);color:#070e28}
@@ -34,21 +35,43 @@
     .muted{color:var(--muted)}
     input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0b1233;color:var(--ink)}
     .small{font-size:12px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr;gap:10px}
+    .banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#09102c;border:1px dashed rgba(255,255,255,.18);padding:10px 12px;border-radius:12px;margin:10px 0}
+    .summary h2{margin:4px 0 10px}
+    .summary .stat{display:inline-block;background:#0e1440;border:1px solid rgba(255,255,255,.08);padding:8px 12px;border-radius:12px;margin-right:8px}
+    .summary .miss{border:1px solid rgba(255,255,255,.15);padding:10px;border-radius:12px;margin:10px 0;background:#0b1233}
+    .big-actions{display:flex;gap:8px;flex-wrap:wrap}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>PELLETB Practice Exam</h1>
-      <div class="row">
-        <span class="badge"><strong>Total Time:</strong> <span class="timer" id="totalTimer">03:00:00</span></span>
-        <span class="badge"><strong>Section Time:</strong> <span class="timer" id="sectionTimer">45:00</span></span>
-        <span class="badge" id="scoreBadge">Score: 0</span>
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h1>PELLETB Practice Exam</h1>
+          <div class="row">
+            <span class="badge"><strong>Total Time:</strong> <span class="timer" id="totalTimer">03:00:00</span></span>
+            <span class="badge"><strong>Section Time:</strong> <span class="timer" id="sectionTimer">45:00</span></span>
+            <span class="badge" id="scoreBadge">Score: 0</span>
+          </div>
+        </div>
+        <div class="big-actions">
+          <button class="good" id="saveBtn">💾 Save & Pause</button>
+          <button class="ghost" id="resumeBtn" style="display:none">▶ Resume</button>
+          <button class="danger" id="finishBtn">✔ Finish & Review</button>
+        </div>
       </div>
+
+      <div class="banner" id="resumeBanner" style="display:none">
+        <div>Saved progress detected. You can resume where you left off, with your remaining time restored.</div>
+        <div class="row">
+          <button class="good" id="resumeNow">Resume now</button>
+          <button class="ghost" id="startOver">Start over</button>
+        </div>
+      </div>
+
       <div class="section-tabs" id="tabs"></div>
       <div id="screen"></div>
-      <div class="controls">
+      <div class="controls" id="navControls">
         <div style="flex:1">
           <div class="progress"><div id="progressBar" class="bar"></div></div>
           <div class="small" id="progressText">Question 0 of 0</div>
@@ -58,24 +81,29 @@
           <button class="primary" id="nextBtn">Next ▶</button>
         </div>
       </div>
-      <div class="small" style="margin-top:8px">Tip: You’ll see whether you were correct immediately after answering. You can change answers anytime within the section.</div>
+      <div class="small" style="margin-top:8px">Immediate feedback is shown <em>after</em> you answer. Use <strong>Save & Pause</strong> any time; your remaining time will be preserved for when you return.</div>
     </div>
   </div>
 
 <script>
-// ======= DATA =======
-// Four sections: Writing (Clarity & Grammar), Spelling (LE/report words), Reading, Reasoning
-// Add/modify questions below. Types: 'mc', 'spelling'. For 'spelling', provide correct spelling in 'answer'.
-const SECTIONS = [
+// ========= STORAGE & UTILS =========
+const STORAGE_KEY = 'pelletb.practice.v2';
+function $(id){return document.getElementById(id)}
+function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}` }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr }
+
+// ========= QUESTION BANK (expanded) =========
+// NOTE: We will randomize question order on first run, then save it so resume keeps the same order.
+let SECTIONS = [
   {
-    id: 'writing', label: 'Writing (Clarity & Grammar)', minutes: 45,
-    questions: [
+    id:'writing', label:'Writing (Clarity & Grammar)', minutes:45,
+    questions:[
       {type:'mc', prompt:'Choose the sentence that is most clear and grammatically correct.', choices:[
         'The suspect, who we seen earlier, was detained.',
         'The suspect whom we saw earlier was detained.',
         'The suspect who we seen earlier, was detained.',
         'The suspect which we saw earlier was detained.'
-      ], answer:1, explain:'"whom" is correct as the object of the verb "saw"; no comma is needed.'},
+      ], answer:1, explain:'"whom" is correct as the object of "saw"; no comma is needed.'},
       {type:'mc', prompt:'Select the sentence with correct comma usage.', choices:[
         'Officers secured the scene and, waited for detectives.',
         'Officers secured the scene, and waited for detectives.',
@@ -105,27 +133,61 @@ const SECTIONS = [
         'Because it was raining, we delayed the search.',
         'On account of the rain, a delay of the search was effectuated.',
         'As a result of rain, there was a delay of the search.'
-      ], answer:1, explain:'"Because it was raining" is clear and concise.'}
+      ], answer:1, explain:'"Because it was raining" is clear and concise.'},
+      {type:'mc', prompt:'Identify the sentence with correct parallel structure.', choices:[
+        'The suspect fled, jumping fences and to run through yards.',
+        'The suspect fled, jumped fences, and runs through yards.',
+        'The suspect fled, jumping fences and running through yards.',
+        'The suspect flees, jumped fences, and running through yards.'
+      ], answer:2, explain:'Gerunds should match: jumping…running.'},
+      {type:'mc', prompt:'Which sentence is correctly punctuated?', choices:[
+        'Each officer was issued a Taser; body camera and radio.',
+        'Each officer was issued a Taser, body camera, and radio.',
+        'Each officer, was issued a Taser body camera, and radio.',
+        'Each officer was issued; a Taser, body camera, and radio.'
+      ], answer:1, explain:'Use commas for simple lists.'},
+      {type:'mc', prompt:'Choose the sentence with correct pronoun case.', choices:[
+        'It was them who arrived first at the scene.',
+        'It was they who arrived first at the scene.',
+        'It was him who arrived first at the scene.',
+        'It was her that arrived first at the scene.'
+      ], answer:1, explain:'Formal standard: "It was they who…" uses the subject case after a linking verb.'},
+      {type:'mc', prompt:'Choose the best revision for clarity.', choices:[
+        'Having finished the interview, the report was written by Officer Diaz.',
+        'The report was written after finishing the interview by Officer Diaz.',
+        'After Officer Diaz finished the interview, she wrote the report.',
+        'After finishing, the report was written.'
+      ], answer:2, explain:'Avoid dangling modifiers; Option 3 makes the actor clear.'}
     ]
   },
   {
-    id: 'spelling', label: 'Spelling (Law & Report Words)', minutes: 45,
-    questions: [
+    id:'spelling', label:'Spelling (Law & Report Words)', minutes:45,
+    questions:[
       {type:'spelling', prompt:'Type the correct spelling: The judge issued a ____ to appear in court.', answer:'subpoena', explain:'Correct spelling: subpoena.'},
       {type:'spelling', prompt:'Type the correct spelling: The suspect was found in ____ of narcotics.', answer:'possession', explain:'Double s: poss-ess-ion.'},
-      {type:'spelling', prompt:'Type the correct spelling: We began fixed-camera ____ at the location.', answer:'surveillance', explain:'"Surveillance" has the double "l" and "eillance" ending.'},
-      {type:'spelling', prompt:'Type the correct spelling: The incident ____ at 1930 hours.', answer:'occurred', explain:'Past tense with double "r": occurred.'},
-      {type:'spelling', prompt:'Type the correct spelling: The officer did not ____ the vehicle.', answer:'pursue', explain:'"Pursue," not "persue".'},
-      {type:'spelling', prompt:'Type the correct spelling: The property was kept in the evidence _____.', answer:'warehouse', explain:'Compound word: warehouse.'},
-      {type:'spelling', prompt:'Type the correct spelling: The team executed a search ____ issued by a judge.', answer:'warrant', explain:'Warrant (two r’s).'},
-      {type:'spelling', prompt:'Type the correct spelling: The report was kept ____ from opinion.', answer:'separate', explain:'"Separate," not "seperate".'},
-      {type:'spelling', prompt:'Type the correct spelling: The defendant was found not guilty and received an ____.', answer:'acquittal', explain:'Two c’s, two t’s: acquittal.'},
-      {type:'spelling', prompt:'Type the correct spelling: Officers read the ____ rights.', answer:'Miranda', explain:'Capitalized surname: Miranda.'}
+      {type:'spelling', prompt:'Type the correct spelling: We began fixed-camera ____ at the location.', answer:'surveillance', explain:'Double “l” + “eillance”.'},
+      {type:'spelling', prompt:'Type the correct spelling: The incident ____ at 1930 hours.', answer:'occurred', explain:'Past tense with double "r".'},
+      {type:'spelling', prompt:'Type the correct spelling: The officer did not ____ the vehicle.', answer:'pursue', explain:'Not "persue".'},
+      {type:'spelling', prompt:'Type the correct spelling: The property was kept in the evidence _____.', answer:'warehouse', explain:'Compound word.'},
+      {type:'spelling', prompt:'Type the correct spelling: The team executed a search ____ issued by a judge.', answer:'warrant', explain:'Two r’s.'},
+      {type:'spelling', prompt:'Type the correct spelling: The report was kept ____ from opinion.', answer:'separate', explain:'Not "seperate".'},
+      {type:'spelling', prompt:'Type the correct spelling: The defendant was found not guilty and received an ____. ', answer:'acquittal', explain:'Two c’s, two t’s.'},
+      {type:'spelling', prompt:'Type the correct spelling: Officers read the ____ rights.', answer:'Miranda', explain:'Capitalized surname.'},
+      {type:'spelling', prompt:'Type the correct spelling: Evidence of drug ________ was photographed.', answer:'paraphernalia', explain:'para-pher-na-lia.'},
+      {type:'spelling', prompt:'Type the correct spelling: The court entered a default ________ against the defendant.', answer:'judgment', explain:'U.S. legal spelling: “judgment”.'},
+      {type:'spelling', prompt:'Type the correct spelling: The cash was subject to civil ________.', answer:'forfeiture', explain:'for-fei-ture.'},
+      {type:'spelling', prompt:'Type the correct spelling: The school requested a parent-_______ to discuss attendance.', answer:'liaison', explain:'liai-son.'},
+      {type:'spelling', prompt:'Type the correct spelling: The knife was seized, not ________.', answer:'seized', explain:'Verb “seize” → “seized”.'},
+      {type:'spelling', prompt:'Type the correct spelling: The offense is a ________ (less than a felony).', answer:'misdemeanor', explain:'mis-de-mean-or.'},
+      {type:'spelling', prompt:'Type the correct spelling: The officer noted the suspect showed ________ (not “resistence”).', answer:'resistance', explain:'resis-tance.'},
+      {type:'spelling', prompt:'Type the correct spelling: It was a repeat ________ of the policy.', answer:'violation', explain:'vio-la-tion.'},
+      {type:'spelling', prompt:'Type the correct spelling: The teen is a ________ under state law.', answer:'juvenile', explain:'ju-ve-nile.'},
+      {type:'spelling', prompt:'Type the correct spelling: The driver’s ________ is suspended.', answer:'license', explain:'American spelling.'}
     ]
   },
   {
-    id: 'reading', label: 'Reading Comprehension', minutes: 45,
-    questions: [
+    id:'reading', label:'Reading Comprehension', minutes:45,
+    questions:[
       {type:'mc', prompt:'Passage: Officers responded to a call at 2215 hours regarding a disturbance at 840 Pine St. Upon arrival, they observed a broken window and found a wallet on the sidewalk bearing the name “J. Ramos.” Neighbors reported seeing a blue sedan depart eastbound at high speed two minutes prior. Question: Which detail MOST strongly suggests a forced entry?', choices:[
         'The time of the call.', 'The broken window.', 'The wallet on the sidewalk.', 'The sedan traveling eastbound.'
       ], answer:1, explain:'A broken window indicates the structure may have been breached.'},
@@ -137,12 +199,30 @@ const SECTIONS = [
       ], answer:1, explain:'Evidence suggests a bicycle connection but does not prove it.'},
       {type:'mc', prompt:'Passage: A school resource officer held a safety talk. Afterward, the number of students reporting bullying increased. Question: What is the BEST explanation?', choices:[
         'Bullying incidents increased after the talk.', 'Students became more willing to report incidents.', 'The talk encouraged false reports.', 'The officer failed to communicate clearly.'
-      ], answer:1, explain:'Awareness often increases reporting rather than incidents.'}
+      ], answer:1, explain:'Awareness often increases reporting rather than incidents.'},
+      {type:'mc', prompt:'Passage: A city park closes at 2200 hours. A runner is contacted at 2215 hours near a locked gate and claims ignorance of the rule. What is the MOST appropriate immediate action based on policy that emphasizes education before citation?', choices:[
+        'Cite the runner immediately.', 'Detain the runner for trespass investigation.', 'Provide a warning and explain the posted hours.', 'Arrest the runner for resisting.'
+      ], answer:2, explain:'Education-first policy → warning with explanation (unless aggravating factors).'},
+      {type:'mc', prompt:'Passage: Dispatch notes repeated noise complaints at the same apartment over two months. Tonight, the resident is cooperative and lowers the volume. What is the BEST documentation for long-term problem solving?', choices:[
+        'No report since the issue stopped.', 'Brief log entry referencing prior calls.', 'Full crime report for disturbing the peace.', 'Email to the city attorney.'
+      ], answer:1, explain:'A brief log entry connects the history and supports future action.'},
+      {type:'mc', prompt:'Passage: A campus officer notes an increase in bicycle thefts near one rack after sunset. Lighting is dim and surveillance coverage is partial. Which action BEST addresses the underlying cause?', choices:[
+        'Increase citations for loitering.', 'Recommend improved lighting and camera coverage.', 'Close the rack permanently.', 'Conduct random backpack searches.'
+      ], answer:1, explain:'Environmental changes (lighting/cameras) target the cause.'},
+      {type:'mc', prompt:'Passage: A witness states, “The driver was tall, maybe six feet, wearing a red hoodie, and drove off in a white hatchback.” What is the MOST reliable detail for BOLO?', choices:[
+        'Height ~6 feet', 'Red hoodie', 'White hatchback', 'Driver was tall and nervous'
+      ], answer:2, explain:'Vehicle make/style and color are often more consistently observed than height.'},
+      {type:'mc', prompt:'Passage: Policy requires secondary searches of arrestees before transport. During review, a supervisor finds several cases with no secondary search noted. What is the primary concern?', choices:[
+        'Officer safety is at risk.', 'Report length is excessive.', 'The transport log is outdated.', 'Property rooms are overloaded.'
+      ], answer:0, explain:'Missing secondary searches create safety risks.'},
+      {type:'mc', prompt:'Passage: A teacher emails that a student made a vague threat to "get even" after a grade dispute. The student has no prior history. What is the BEST initial step?', choices:[
+        'Immediate arrest for threats.', 'Document and conduct a threat assessment with administration.', 'Ignore unless a weapon is seen.', 'Notify media to deter copycats.'
+      ], answer:1, explain:'Use structured threat assessment with documentation.'}
     ]
   },
   {
-    id: 'reasoning', label: 'Reasoning Ability', minutes: 45,
-    questions: [
+    id:'reasoning', label:'Reasoning Ability', minutes:45,
+    questions:[
       {type:'mc', prompt:'All trespassers in the park after 10 p.m. receive citations. Carlos is in the park at 11 p.m. What MUST be true?', choices:[
         'Carlos will be arrested.', 'Carlos will receive a citation.', 'Carlos is a minor.', 'Carlos has committed burglary.'
       ], answer:1, explain:'Given the rule, he must be cited; arrest is not implied.'},
@@ -154,51 +234,126 @@ const SECTIONS = [
       ], answer:1, explain:'Delivery trucks are vehicles, so they cannot use Lane 2.'},
       {type:'mc', prompt:'The keys are in the locker, the desk, or the patrol car. They are not in the locker. If they are in the patrol car, Officer Lee would have found them, but she did not. Where are the keys?', choices:[
         'Locker', 'Desk', 'Patrol car', 'Unknown'
-      ], answer:1, explain:'Eliminate locker; eliminate patrol car based on Lee; remaining: desk.'}
+      ], answer:1, explain:'Eliminate locker; eliminate patrol car based on Lee; remaining: desk.'},
+      {type:'mc', prompt:'Exactly one of the three statements is true: (1) The suspect wore a hat. (2) The suspect wore glasses. (3) The suspect wore neither. Which is true?', choices:[
+        '(1)', '(2)', '(3)', 'None'
+      ], answer:0, explain:'If (3) were true, both (1) and (2) would be false (leaving only one true), but that contradicts "neither" with others false. Checking possibilities shows only (1) can be true.'},
+      {type:'mc', prompt:'A logbook requires entries every 30 minutes starting at 0800. An entry exists at 0830 and 0900, but none at 0930. What is the earliest time a supervisor can say the policy was first violated?', choices:[
+        '0830', '0900', '0930', '1000'
+      ], answer:2, explain:'The missing 0930 entry is the first violation.'},
+      {type:'mc', prompt:'Three suspects—A, B, and C—cannot be interviewed at the same time. If A is interviewed before B, and C must be last, which order is valid?', choices:[
+        'A, C, B', 'B, A, C', 'A, B, C', 'C, A, B'
+      ], answer:2, explain:'A before B, C last → A, B, C.'},
+      {type:'mc', prompt:'At a checkpoint, every third car is inspected. The 9th car is inspected. Which of the following is also inspected?', choices:[
+        '12th', '13th', '14th', '15th'
+      ], answer:0, explain:'Multiples of 3 → 12th, 15th, etc.'},
+      {type:'mc', prompt:'All entry badges are numbered. Badges divisible by 4 also have a blue stripe. Badge #28 is missing a stripe. Which MUST be true?', choices:[
+        'Badge #28 is fake.', 'Badge #28 is not divisible by 4.', 'The stripe may have worn off.', 'Badge #28 was misprinted.'
+      ], answer:1, explain:'#28 ÷ 4 = 7 → actually divisible; but the rule says divisible by 4 have stripe. Missing stripe contradicts; however the only must-be-true option about divisibility is incorrect here. Correct choice: The stripe may have worn off is possible, not must. The must-true is that #28 being missing a stripe contradicts the rule, so it cannot be divisible by 4 → BUT math shows it is. To avoid ambiguity, revised: use #27 instead.'}
     ]
   }
 ];
 
-// ======= ENGINE =======
+// Fix reasoning Q about divisibility to avoid ambiguity
+SECTIONS[3].questions.pop();
+SECTIONS[3].questions.push({type:'mc', prompt:'All entry badges are numbered. Badges divisible by 3 also have a blue stripe. Badge #27 is missing a stripe. Which MUST be true?', choices:[
+  'Badge #27 is fake.', 'Badge #27 is not divisible by 3.', 'The stripe may have worn off.', 'Badge #27 was misprinted.'
+], answer:1, explain:'#27 without a stripe means it cannot be divisible by 3 under the rule.'});
+
+// ========= STATE =========
 const state = {sectionIndex:0, qIndex:0, answers:{}, correct:0, total:0, sectionEnds:[], totalEnds:0, running:true};
 
-function $(id){return document.getElementById(id)}
-
-function formatTime(ms){
-  const s=Math.max(0,Math.floor(ms/1000));
-  const hh=String(Math.floor(s/3600)).padStart(2,'0');
-  const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
-  const ss=String(s%60).padStart(2,'0');
-  return `${hh}:${mm}:${ss}`
+// ========= INITIALIZATION =========
+function prepareSectionsFromScratch(){
+  // Randomize question order for each section and compute totals
+  SECTIONS = SECTIONS.map(sec=>({
+    ...sec,
+    questions: shuffle(sec.questions.slice())
+  }));
 }
 
-function init(){
-  // Build tabs
-  const tabs = $('tabs');
-  SECTIONS.forEach((sec,i)=>{
-    const b=document.createElement('button');
-    b.className='tab'+(i===0?' active':'');
-    b.textContent=`${i+1}. ${sec.label}`;
-    b.onclick=()=>switchSection(i);
-    tabs.appendChild(b);
-  });
-  // Timers
+function computeTimers(restored){
   const now=Date.now();
-  let acc=0; state.sectionEnds = SECTIONS.map(s=>{acc+=s.minutes*60*1000; return now+acc});
+  const mins = SECTIONS.map(s=>s.minutes);
+  let acc=0; state.sectionEnds=[];
+  for(let i=0;i<SECTIONS.length;i++){
+    let dur = mins[i]*60*1000;
+    if(restored && i===state.sectionIndex && restored.remainingCurrentMs!=null){ dur = restored.remainingCurrentMs; }
+    acc += dur; state.sectionEnds.push(now+acc);
+  }
   state.totalEnds = state.sectionEnds[state.sectionEnds.length-1];
+}
+
+function saveProgress(pause=true){
+  const now=Date.now();
+  const secEnd = state.sectionEnds[state.sectionIndex];
+  const remainingCurrentMs = Math.max(0, secEnd - now);
+  const payload = {
+    version:2,
+    paused: !!pause,
+    remainingCurrentMs,
+    sectionIndex: state.sectionIndex,
+    qIndex: state.qIndex,
+    answers: state.answers,
+    correct: state.correct,
+    sections: SECTIONS // includes randomized order
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  if(pause){ state.running=false; $('resumeBtn').style.display='inline-block'; alert('Saved and paused. You can close this tab and resume later.'); }
+  else { alert('Progress saved.'); }
+}
+
+function tryLoadSaved(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+
+function applySaved(saved, autoResume=true){
+  if(!saved) return false;
+  // Restore randomized sections and answers
+  SECTIONS = saved.sections || SECTIONS;
+  state.answers = saved.answers || {};
+  state.correct = saved.correct || 0;
+  state.sectionIndex = saved.sectionIndex || 0;
+  state.qIndex = saved.qIndex || 0;
+  computeTimers({remainingCurrentMs: saved.remainingCurrentMs});
   state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0);
+  if(autoResume){ state.running = true; $('resumeBanner').style.display='none'; $('resumeBtn').style.display='none'; }
+  else { state.running=false; $('resumeBanner').style.display='flex'; $('resumeBtn').style.display='inline-block'; }
+  return true;
+}
+
+function resetAll(){ localStorage.removeItem(STORAGE_KEY); location.reload(); }
+
+function init(){
+  const saved = tryLoadSaved();
+  if(saved){
+    // Load but show banner to resume
+    applySaved(saved, false);
+  } else {
+    prepareSectionsFromScratch();
+    computeTimers(null);
+    state.total = SECTIONS.reduce((a,s)=>a+s.questions.length,0);
+  }
+  buildTabs();
   render();
   tick();
 }
 
-function switchSection(i){
-  state.sectionIndex=i; state.qIndex=0; renderTabs(); render();
+// ========= UI RENDER =========
+function buildTabs(){
+  const tabs = $('tabs'); tabs.innerHTML='';
+  SECTIONS.forEach((sec,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===state.sectionIndex?' active':'');
+    b.textContent=`${i+1}. ${sec.label}`;
+    b.onclick=()=>{ state.sectionIndex=i; state.qIndex=0; renderTabs(); render(); };
+    tabs.appendChild(b);
+  });
 }
-
 function renderTabs(){
-  [...document.querySelectorAll('.tab')].forEach((el,idx)=>{
-    el.classList.toggle('active', idx===state.sectionIndex);
-  })
+  [...document.querySelectorAll('.tab')].forEach((el,idx)=>{ el.classList.toggle('active', idx===state.sectionIndex); });
 }
 
 function render(){
@@ -207,17 +362,13 @@ function render(){
   const sKey=`${sec.id}:${state.qIndex}`;
   const ans=state.answers[sKey];
 
-  // progress
   const answered = Object.keys(state.answers).length;
   $('scoreBadge').textContent=`Score: ${state.correct}`;
-  $('progressText').textContent=`Question ${state.qIndex+1} of ${sec.questions.length} (Section ${state.sectionIndex+1}/${SECTIONS.length}) • Total answered: ${answered}/${state.total}`;
+  $('progressText').textContent=`Question ${state.qIndex+1} of ${sec.questions.length} (Section ${state.sectionIndex+1}/${SECTIONS.length}) • Answered: ${answered}/${state.total}`;
   $('progressBar').style.width = `${(state.qIndex+1)/sec.questions.length*100}%`;
 
-  // screen
-  const screen=$('screen');
-  screen.innerHTML='';
-  const qWrap=document.createElement('div');
-  qWrap.className='q';
+  const screen=$('screen'); screen.innerHTML='';
+  const qWrap=document.createElement('div'); qWrap.className='q';
   const h=document.createElement('h3'); h.textContent=q.prompt; qWrap.appendChild(h);
 
   if(q.type==='mc'){
@@ -240,58 +391,90 @@ function render(){
     const fb=document.createElement('div'); fb.className='feedback';
     check.onclick=()=>gradeSpelling(input.value);
     qWrap.appendChild(input); qWrap.appendChild(document.createElement('div')).style.height='8px'; qWrap.appendChild(check); qWrap.appendChild(fb);
-    if(ans){
-      fb.textContent = ans.correct? 'Correct ✔' : `Incorrect ✖ — Correct: ${q.answer}`;
-      fb.className = 'feedback ' + (ans.correct? 'good':'bad');
-    }
+    if(ans){ fb.textContent = ans.correct? 'Correct ✔' : `Incorrect ✖ — Correct: ${q.answer}`; fb.className = 'feedback ' + (ans.correct? 'good':'bad'); }
   }
 
-  // explanation
-  const exp=document.createElement('div'); exp.className='muted'; exp.style.marginTop='8px';
-  if(ans){ exp.innerHTML = `<strong>Why:</strong> ${q.explain||'—'}`; }
+  const exp=document.createElement('div'); exp.className='muted'; exp.style.marginTop='8px'; if(ans){ exp.innerHTML = `<strong>Why:</strong> ${q.explain||'—'}`; }
   qWrap.appendChild(exp);
-
   screen.appendChild(qWrap);
 
-  $('prevBtn').disabled = state.qIndex===0;
-  $('nextBtn').disabled = state.qIndex===sec.questions.length-1;
+  $('prevBtn').disabled = state.qIndex===0; $('nextBtn').disabled = state.qIndex===sec.questions.length-1;
 }
 
+// ========= GRADING =========
 function gradeMC(choice){
   const sec=SECTIONS[state.sectionIndex];
   const q=sec.questions[state.qIndex];
-  const key=`${sec.id}:${state.qIndex}`;
-  const already = state.answers[key]?.graded;
-  const correct = choice===q.answer;
-  state.answers[key] = {graded:true, choice, correct};
-  if(!already){ if(correct) state.correct++; }
+  const key=`${sec.id}:${state.qIndex}`; const already = state.answers[key]?.graded; const correct = choice===q.answer;
+  state.answers[key] = {graded:true, choice, correct}; if(!already && correct){ state.correct++; }
   render();
 }
-
 function gradeSpelling(text){
-  const sec=SECTIONS[state.sectionIndex];
-  const q=sec.questions[state.qIndex];
-  const key=`${sec.id}:${state.qIndex}`;
-  const already = state.answers[key]?.graded;
+  const sec=SECTIONS[state.sectionIndex]; const q=sec.questions[state.qIndex];
+  const key=`${sec.id}:${state.qIndex}`; const already = state.answers[key]?.graded;
   const correct = (text||'').trim().toLowerCase() === q.answer.toLowerCase();
-  state.answers[key] = {graded:true, text, correct};
-  if(!already){ if(correct) state.correct++; }
+  state.answers[key] = {graded:true, text, correct}; if(!already && correct){ state.correct++; }
   render();
 }
 
+// ========= NAV + TIMERS =========
 $('prevBtn').onclick=()=>{ if(state.qIndex>0){ state.qIndex--; render(); } };
 $('nextBtn').onclick=()=>{ const sec=SECTIONS[state.sectionIndex]; if(state.qIndex<sec.questions.length-1){ state.qIndex++; render(); } };
+$('finishBtn').onclick=()=> showSummary();
+$('saveBtn').onclick=()=> saveProgress(true);
+$('resumeBtn').onclick=()=> resumeNow();
+$('resumeNow').onclick=()=> resumeNow();
+$('startOver').onclick=()=> resetAll();
+
+function resumeNow(){ const saved = tryLoadSaved(); if(saved){ applySaved(saved, true); render(); tick(); }}
 
 function tick(){
   if(!state.running) return;
-  const now=Date.now();
-  const totalLeft = state.totalEnds - now;
-  $('totalTimer').textContent = formatTime(totalLeft);
-  const secEnd = state.sectionEnds[state.sectionIndex];
-  $('sectionTimer').textContent = formatTime(secEnd - now);
-  if(totalLeft<=0){ state.running=false; alert('Time! Review your answers and refresh to try again.'); }
+  const now=Date.now(); const totalLeft = state.totalEnds - now; $('totalTimer').textContent = fmt(totalLeft);
+  const secEnd = state.sectionEnds[state.sectionIndex]; $('sectionTimer').textContent = fmt(secEnd - now);
+  if(totalLeft<=0){ state.running=false; showSummary(true); return; }
   requestAnimationFrame(tick);
 }
+
+// ========= SUMMARY =========
+function showSummary(timeUp=false){
+  state.running=false;
+  const screen=$('screen'); screen.innerHTML=''; $('navControls').style.display='none';
+  const wrapper=document.createElement('div'); wrapper.className='summary';
+  const totalQ = SECTIONS.reduce((a,s)=>a+s.questions.length,0); const correct = Object.values(state.answers).filter(a=>a.correct).length;
+  const percent = Math.round((correct/totalQ)*100);
+  const h2=document.createElement('h2'); h2.textContent = timeUp? 'Time! Results & Review':'Results & Review'; wrapper.appendChild(h2);
+  const stats=document.createElement('div');
+  stats.innerHTML = `<span class="stat">Score: <strong>${correct}/${totalQ}</strong> (${percent}%)</span>` +
+    SECTIONS.map((sec,i)=>{ const keys = Object.keys(state.answers).filter(k=>k.startsWith(sec.id+':')); const c = keys.filter(k=>state.answers[k].correct).length; return `<span class="stat">${i+1}. ${sec.label}: <strong>${c}/${sec.questions.length}</strong></span>`; }).join(' ');
+  wrapper.appendChild(stats);
+
+  const misses=[];
+  SECTIONS.forEach((sec)=>{
+    sec.questions.forEach((q,idx)=>{
+      const k=`${sec.id}:${idx}`; const a=state.answers[k]; if(!a || !a.correct){ misses.push({sec, q, idx, a}); }
+    })
+  });
+  if(misses.length){
+    const t=document.createElement('h3'); t.textContent='Missed or Unanswered Questions'; wrapper.appendChild(t);
+    misses.forEach(m=>{
+      const div=document.createElement('div'); div.className='miss';
+      const chosen = m.a?.choice!=null ? m.q.choices?.[m.a.choice] : (m.a?.text||'(no answer)');
+      let correctText = m.q.type==='mc' ? m.q.choices[m.q.answer] : m.q.answer;
+      div.innerHTML = `<strong>Section:</strong> ${m.sec.label}<br><strong>Question:</strong> ${m.q.prompt}<br><strong>Your answer:</strong> ${chosen}<br><strong>Correct:</strong> ${correctText}${m.q.explain? `<br><em>Why:</em> ${m.q.explain}`:''}`;
+      wrapper.appendChild(div);
+    });
+  }
+
+  const actions=document.createElement('div'); actions.className='row';
+  const restart=document.createElement('button'); restart.className='ghost'; restart.textContent='Start a New Attempt'; restart.onclick=()=>{ resetAll(); };
+  const saveRep=document.createElement('button'); saveRep.className='primary'; saveRep.textContent='Save Results'; saveRep.onclick=()=>{ saveProgress(true); };
+  actions.appendChild(restart); actions.appendChild(saveRep); wrapper.appendChild(actions);
+  screen.appendChild(wrapper);
+}
+
+// ========= BOOT =========
+window.addEventListener('beforeunload', ()=>{ if(state.running){ saveProgress(true); } });
 
 init();
 </script>
