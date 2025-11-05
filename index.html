@@ -89,6 +89,10 @@ function $(id){return document.getElementById(id)}
 function fmt(ms){ const s=Math.max(0,Math.floor(ms/1000)); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}` }
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr }
 function uniquePush(store, key){ if(store.has(key)) return false; store.add(key); return true; }
+// Safe localStorage (canvas/preview sandboxes sometimes block it)
+let __memStore = {};
+function safeSet(key, val){ try{ localStorage.setItem(key, val); }catch(e){ __memStore[key]=val; } }
+function safeGet(key){ try{ return localStorage.getItem(key); }catch(e){ return __memStore[key]||null; } }
 
 // ========= SECTION 1: WRITING/GRAMMAR (50 unique)
 function buildWriting(){
@@ -315,10 +319,10 @@ function saveProgress(pause=true){
     remainingMs: state.remainingMs,
     sections: SECTIONS.map(s=>({id:s.id,label:s.label,minutes:s.minutes,questions:s.questions}))
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  safeSet(STORAGE_KEY, JSON.stringify(payload));
   if(pause){ state.running=false; $('resumeBtn').style.display='inline-block'; alert('Saved & paused. You can close the tab and resume later.'); }
 }
-function tryLoadSaved(){ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return null; try{return JSON.parse(raw)}catch{ return null } }
+function tryLoadSaved(){ const raw=safeGet(STORAGE_KEY); if(!raw) return null; try{return JSON.parse(raw)}catch{ return null } }
 function applySaved(saved, autoResume=true){
   if(!saved) return false;
   // Use saved questions and timers exactly
